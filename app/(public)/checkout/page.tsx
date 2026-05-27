@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import SiteShell from "@/components/SiteShell";
+import { formatCurrency } from "@/lib/format";
 import { useApp } from "@/lib/store";
 import type { CurrencyCode, Order, PaymentMethod, PaymentPlan, Product } from "@/lib/types";
 
@@ -257,7 +258,7 @@ export default function CheckoutPage() {
                         </div>
                       )}
                     </div>
-                    <strong>{item.qty}x {formatIDR(item.product.price)}</strong>
+                    <strong>{item.qty}x {formatCurrency(item.product.price)}</strong>
                   </div>
                 );
               })}
