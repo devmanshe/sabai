@@ -6,12 +6,13 @@ import { useSearchParams } from "next/navigation";
 import { useApp } from "@/lib/store";
 import type { Order } from "@/lib/types";
 
-type AdminOrderStage = "pending" | "paid" | "shipped" | "cancelled";
+type AdminOrderStage = "pending" | "paid" | "settlement" | "shipped" | "cancelled";
 
 const stageOptions: { value: AdminOrderStage | "all"; label: string }[] = [
   { value: "all", label: "All" },
   { value: "pending", label: "Pending" },
   { value: "paid", label: "Paid" },
+  { value: "settlement", label: "Waiting Settlement" },
   { value: "shipped", label: "Shipped" },
   { value: "cancelled", label: "Cancelled" }
 ];
@@ -21,11 +22,15 @@ const mapOrderToStage = (order: Order): AdminOrderStage => {
     return "cancelled";
   }
 
+  if (order.status === "waiting_settlement") {
+    return "settlement";
+  }
+
   if (order.status === "to_ship" || order.status === "to_receive" || order.status === "completed") {
     return "shipped";
   }
 
-  if (order.paymentStatus === "partially_paid" || order.paymentStatus === "paid" || order.paymentStatus === "waiting_settlement") {
+  if (order.paymentStatus === "dp_paid" || order.paymentStatus === "fully_paid") {
     return "paid";
   }
 
@@ -42,6 +47,7 @@ const formatMoney = (order: Order) =>
 const getBadgeClass = (stage: AdminOrderStage, order?: Order) => {
   if (order?.status === "waiting_external") return "bg-purple-100 text-purple-800";
   if (stage === "pending") return "bg-amber-100 text-amber-800";
+  if (stage === "settlement") return "bg-orange-100 text-orange-800";
   if (stage === "paid") return "bg-sky-100 text-sky-800";
   if (stage === "shipped") return "bg-emerald-100 text-emerald-800";
   return "bg-rose-100 text-rose-800";

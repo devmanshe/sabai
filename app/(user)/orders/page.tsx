@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import SiteShell from "@/components/SiteShell";
 import { RequireAuth } from "@/components/Protected";
@@ -11,6 +12,7 @@ const statusTabs: { value: "all" | OrderStatus; label: string }[] = [
   { value: "to_pay", label: "To Pay" },
   { value: "on_process", label: "On Process" },
   { value: "ready", label: "Ready" },
+  { value: "waiting_settlement", label: "Waiting Settlement" },
   { value: "to_ship", label: "To Ship" },
   { value: "to_receive", label: "To Receive" },
   { value: "completed", label: "Completed" },
@@ -22,6 +24,7 @@ const badgeLabel: Record<OrderStatus, string> = {
   to_pay: "To Pay",
   on_process: "On Process",
   ready: "Ready",
+  waiting_settlement: "Waiting Settlement",
   to_ship: "To Ship",
   to_receive: "To Receive",
   completed: "Completed",
@@ -30,7 +33,8 @@ const badgeLabel: Record<OrderStatus, string> = {
 };
 
 const paymentBadgeLabel: Record<PaymentStatus, string> = {
-  unpaid: "Unpaid",
+  to_pay: "To Pay",
+  pending: "To Pay",
   dp_paid: "DP Paid",
   fully_paid: "Fully Paid",
   failed: "Failed",
@@ -131,6 +135,29 @@ export default function OrdersPage() {
                         Payment: {paymentBadgeLabel[order.paymentStatus]}
                         {order.paymentProofName ? ` · Bukti: ${order.paymentProofName}` : ""}
                       </p>
+                      {order.status === "ready" && order.paymentType === "dp" && order.remainingAmount > 0 && (
+                        <div className="mt-2 space-y-2">
+                          <p className="text-sm font-semibold text-[#0f9ab4]">
+                            Barang telah tiba di Indonesia 🎉 Silakan lakukan pelunasan untuk melanjutkan pengiriman.
+                          </p>
+                          <Link
+                            href={`/checkout?settlementOrderId=${encodeURIComponent(order.id)}`}
+                            className="inline-flex rounded-full bg-[#16a7be] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1096ad]"
+                          >
+                            Lunasi Sekarang
+                          </Link>
+                        </div>
+                      )}
+                      {order.status === "ready" && order.shipping_method && order.shipping_method !== "lion_parcel" && (
+                        <p className="mt-1 text-sm text-[#6f8196]">
+                          Link checkout {order.shipping_method === "shopee" ? "Shopee" : "TikTok"} akan dikirim oleh admin.
+                        </p>
+                      )}
+                      {order.status === "waiting_settlement" && (
+                        <p className="mt-1 text-sm font-semibold text-[#b26b00]">
+                          Menunggu verifikasi pelunasan dari admin.
+                        </p>
+                      )}
                       {order.paymentType === "dp" && order.remainingAmount > 0 && (
                         <p className="mt-1 text-sm font-semibold text-[#b26b00]">
                           Sisa pembayaran: {formatMoney(order.remainingAmount, order.currency)}

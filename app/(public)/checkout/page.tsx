@@ -2,18 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import SiteShell from "@/components/SiteShell";
 import { formatCurrency } from "@/lib/format";
 import { useApp } from "@/lib/store";
 import type { CurrencyCode, Order, PaymentMethod, PaymentPlan, Product } from "@/lib/types";
-
-const formatIDR = (value: number) =>
-  new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0
-  }).format(value);
 
 const formatCountdown = (deadline?: string) => {
   if (!deadline) return null;
@@ -24,7 +17,7 @@ const formatCountdown = (deadline?: string) => {
   return `Pre-order closes in ${days} day${days > 1 ? "s" : ""}`;
 };
 
-const isValidPhone = (phone: string) => /^\+?[\d\s-]{9,20}$/.test(phone.trim());
+const isValidPhone = (phone: string) => /^\d{8,15}$/.test(phone.trim());
 
 const getArrivalEstimate = (product: Product) => {
   if (product.status !== "preorder") return null;
@@ -35,7 +28,9 @@ const DP_PERCENT = 0.3;
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { user, cart, cartTotal, profileComplete, isReady, placeOrder, settings } = useApp();
+  const searchParams = useSearchParams();
+  const settlementOrderId = searchParams.get("settlementOrderId");
+  const { user, cart, orders, cartTotal, profileComplete, isReady, placeOrder, updateOrder, settings } = useApp();
   const [selectedMethodId, setSelectedMethodId] = useState("bt_bca");
   const [selectedPaymentPlan, setSelectedPaymentPlan] = useState<PaymentPlan>("full");
   const currency: CurrencyCode = "IDR";
@@ -45,6 +40,8 @@ export default function CheckoutPage() {
   const [shippingMethod, setShippingMethod] = useState<"lion_parcel" | "shopee" | "tiktok">("lion_parcel");
   const [showAllMethods, setShowAllMethods] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const settlementOrder = settlementOrderId ? orders.find((order) => order.id === settlementOrderId) ?? null : null;
+  const isSettlementMode = Boolean(settlementOrder);
 
   const shippingCatalog = {
     regular: { label: "Reguler", eta: "Estimasi tiba 3 - 5 hari", cost: 18000 },
@@ -52,6 +49,7 @@ export default function CheckoutPage() {
   } as const;
   const shippingCost = shippingCatalog[shippingService].cost;
   const effectiveShippingCost = shippingMethod === "lion_parcel" ? shippingCost : 0;
+  const settlementRemainingAmount = settlementOrder?.remainingAmount ?? 0;
 
   const exchangeRates: Record<CurrencyCode, number> = {
     IDR: 1,
@@ -74,14 +72,14 @@ export default function CheckoutPage() {
   const paymentMethods = methodGroups.flatMap((group) => group.methods);
   const selectedMethod = paymentMethods.find((method) => method.id === selectedMethodId) ?? paymentMethods[0];
 
-  const baseGrandTotal = cartTotal + effectiveShippingCost;
+  const baseGrandTotal = isSettlementMode ? settlementRemainingAmount : cartTotal + effectiveShippingCost;
   const dpAmount = Math.round(baseGrandTotal * DP_PERCENT);
-  const hasClosedItems = cart.some((item) => item.product.status === "closed");
+  const hasClosedItems = !isSettlementMode && cart.some((item) => item.product.status === "closed");
   const addressValid = Boolean(
-    user?.profile.address &&
-    user.profile.city &&
-    user.profile.province &&
-    user.profile.postalCode &&
+    user?.profile.address?.trim() &&
+    user.profile.city?.trim() &&
+    user.profile.province?.trim() &&
+    /^\d{5}$/.test(user.profile.postalCode.trim()) &&
     isValidPhone(user.profile.phone)
   );
 
@@ -114,7 +112,7 @@ export default function CheckoutPage() {
 
     if (!shouldMarkPaidNow) {
       return {
-        paymentStatus: "pending" as Order["paymentStatus"],
+        paymentStatus: "to_pay" as Order["paymentStatus"],
         orderStatus: "to_pay" as Order["status"],
         amountPaid: 0,
         remainingAmount: baseGrandTotal
@@ -153,10 +151,10 @@ export default function CheckoutPage() {
       router.replace("/profile");
       return;
     }
-    if (cart.length === 0 && !isSubmitting) {
+    if (!isSettlementMode && cart.length === 0 && !isSubmitting) {
       router.replace("/cart");
     }
-  }, [isReady, user, profileComplete, cart.length, router, isSubmitting]);
+  }, [isReady, user, profileComplete, cart.length, router, isSubmitting, isSettlementMode]);
 
   useEffect(() => {
     setPaymentProofName(null);
@@ -167,8 +165,25 @@ export default function CheckoutPage() {
     if (!selectedMethod || !canSubmit) return;
 
     setIsSubmitting(true);
-    const finalOrderStatus = shippingMethod === "lion_parcel" ? paymentOutcome.orderStatus : ("waiting_external" as Order["status"]);
-    const finalPaymentStatus = shippingMethod === "lion_parcel" ? paymentOutcome.paymentStatus : ("pending" as Order["paymentStatus"]);
+
+    if (isSettlementMode && settlementOrder) {
+      updateOrder(settlementOrder.id, {
+        status: "waiting_settlement",
+        paymentStatus: "pending",
+        settlementProofName: paymentProofName,
+        paymentReference,
+        paymentMethodId: selectedMethod.id,
+        paymentMethod: selectedMethod.name,
+        paymentChannel: selectedMethod.type,
+        notes: "Pelunasan DP menunggu verifikasi admin"
+      });
+
+      router.push("/orders");
+      return;
+    }
+
+    const finalOrderStatus = paymentOutcome.orderStatus;
+    const finalPaymentStatus = paymentOutcome.paymentStatus;
 
     const order = placeOrder({
       paymentMethodId: selectedMethod.id,
@@ -179,7 +194,10 @@ export default function CheckoutPage() {
       shipping_method: shippingMethod,
       external_checkout_link: null,
       external_order_id: null,
-      notes: shippingMethod === "lion_parcel" ? null : `Checkout via ${shippingMethod.toUpperCase()} - link will be sent by admin`,
+      notes:
+        shippingMethod === "lion_parcel"
+          ? null
+          : `Metode: Checkout via ${shippingMethod === "shopee" ? "Shopee" : "TikTok"}. Link checkout akan dikirim oleh admin saat barang sudah sampai Indonesia.`,
       currency,
       exchangeRate: exchangeRates[currency],
       paymentReference,
@@ -198,7 +216,7 @@ export default function CheckoutPage() {
     router.push("/orders");
   };
 
-  if (!isReady || !user || !profileComplete || (cart.length === 0 && !isSubmitting)) {
+  if (!isReady || !user || !profileComplete || (!isSettlementMode && cart.length === 0 && !isSubmitting)) {
     return (
       <SiteShell>
         <div className="flex min-h-[40vh] items-center justify-center text-sm text-text">
@@ -236,7 +254,14 @@ export default function CheckoutPage() {
 
             <div className="checkout-card">
               <h2 className="checkout-store-title">SABAI MERCH</h2>
-              {cart.map((item) => {
+              {isSettlementMode ? (
+                <div className="rounded-2xl border border-ink/10 bg-white p-4">
+                  <p className="text-sm font-semibold text-ink">Pelunasan DP</p>
+                  <p className="mt-1 text-sm text-text">Order {settlementOrder?.id}</p>
+                  <p className="mt-1 text-sm text-text">Status sekarang: {settlementOrder?.status}</p>
+                  <p className="mt-1 text-sm text-text">Sisa pembayaran: {formatCurrency(settlementRemainingAmount)}</p>
+                </div>
+              ) : cart.map((item) => {
                 const preOrderCountdown = formatCountdown(item.product.deadline);
                 const arrivalEstimate = getArrivalEstimate(item.product);
 
@@ -287,7 +312,10 @@ export default function CheckoutPage() {
                   ) : (
                     <div style={{ fontSize: "0.875rem", color: "#444" }}>
                       <div>Metode: Checkout via {shippingMethod === 'shopee' ? 'Shopee' : 'TikTok'}</div>
-                      <div style={{ fontSize: "0.8rem", color: "#666" }}>Ongkir akan mengikuti sistem {shippingMethod === 'shopee' ? 'Shopee' : 'TikTok'}. Link checkout akan dikirim oleh admin.</div>
+                      <div>Ongkir akan mengikuti sistem {shippingMethod === 'shopee' ? 'Shopee' : 'TikTok'}.</div>
+                      <div>Link checkout akan dikirim oleh admin.</div>
+                    <div>Pelunasan dan checkout Shopee/TikTok akan dibuka setelah barang tiba di Indonesia.</div>
+                      <div style={{ fontSize: "0.8rem", color: "#666" }}>*Link dikirim ketika barang sudah sampai Indonesia.</div>
                     </div>
                   )}
                 </div>
@@ -313,33 +341,35 @@ export default function CheckoutPage() {
                 </button>
               </div>
 
-              <div className="checkout-method-group">
-                <p>Skema Pembayaran</p>
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedPaymentPlan("full")}
-                    className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${
-                      selectedPaymentPlan === "full"
-                        ? "border-sky bg-sky/10 text-sky"
-                        : "border-ink/15 bg-white text-ink hover:border-sky/40"
-                    }`}
-                  >
-                    Full Payment
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedPaymentPlan("dp")}
-                    className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${
-                      selectedPaymentPlan === "dp"
-                        ? "border-sky bg-sky/10 text-sky"
-                        : "border-ink/15 bg-white text-ink hover:border-sky/40"
-                    }`}
-                  >
-                    DP 30%
-                  </button>
+              {!isSettlementMode && (
+                <div className="checkout-method-group">
+                  <p>Skema Pembayaran</p>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPaymentPlan("full")}
+                      className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+                        selectedPaymentPlan === "full"
+                          ? "border-sky bg-sky/10 text-sky"
+                          : "border-ink/15 bg-white text-ink hover:border-sky/40"
+                      }`}
+                    >
+                      Full Payment
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPaymentPlan("dp")}
+                      className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+                        selectedPaymentPlan === "dp"
+                          ? "border-sky bg-sky/10 text-sky"
+                          : "border-ink/15 bg-white text-ink hover:border-sky/40"
+                      }`}
+                    >
+                      DP 30%
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="checkout-method-list">
                 {renderedGroups.map((group) => (
@@ -428,29 +458,33 @@ export default function CheckoutPage() {
               <div className="checkout-summary-block">
                 <h3>Cek ringkasan transaksimu</h3>
                 <div className="checkout-summary-row">
-                  <span>Total Harga ({cart.length} Barang)</span>
-                  <strong>{formatPrice(cartTotal)}</strong>
+                  <span>{isSettlementMode ? "Sisa Pelunasan" : `Total Harga (${cart.length} Barang)`}</span>
+                  <strong>{formatPrice(isSettlementMode ? settlementRemainingAmount : cartTotal)}</strong>
                 </div>
-                <div className="checkout-summary-row">
-                  <span>Total Ongkos Kirim</span>
-                  <strong>{formatPrice(shippingCost)}</strong>
-                </div>
-                <div className="checkout-summary-row total">
-                  <span>Total Tagihan</span>
-                  <strong>{formatPrice(baseGrandTotal)}</strong>
-                </div>
-                <div className="checkout-summary-row">
-                  <span>Plan</span>
-                  <strong>{selectedPaymentPlan === "dp" ? "DP 30%" : "Full Payment"}</strong>
-                </div>
-                <div className="checkout-summary-row">
-                  <span>Amount Paid</span>
-                  <strong>{formatPrice(paymentOutcome.amountPaid)}</strong>
-                </div>
-                <div className="checkout-summary-row">
-                  <span>Remaining</span>
-                  <strong>{formatPrice(paymentOutcome.remainingAmount)}</strong>
-                </div>
+                {!isSettlementMode && (
+                  <>
+                    <div className="checkout-summary-row">
+                      <span>Total Ongkos Kirim</span>
+                      <strong>{formatPrice(shippingCost)}</strong>
+                    </div>
+                    <div className="checkout-summary-row total">
+                      <span>Total Tagihan</span>
+                      <strong>{formatPrice(baseGrandTotal)}</strong>
+                    </div>
+                    <div className="checkout-summary-row">
+                      <span>Plan</span>
+                      <strong>{selectedPaymentPlan === "dp" ? "DP 30%" : "Full Payment"}</strong>
+                    </div>
+                    <div className="checkout-summary-row">
+                      <span>Amount Paid</span>
+                      <strong>{formatPrice(paymentOutcome.amountPaid)}</strong>
+                    </div>
+                    <div className="checkout-summary-row">
+                      <span>Remaining</span>
+                      <strong>{formatPrice(paymentOutcome.remainingAmount)}</strong>
+                    </div>
+                  </>
+                )}
               </div>
 
               {hasClosedItems && (
@@ -460,7 +494,7 @@ export default function CheckoutPage() {
               )}
 
               <button className="cart-buy-btn" type="button" onClick={handlePlaceOrder} disabled={!canSubmit}>
-                Bayar Sekarang
+                {isSettlementMode ? "Lunasi Sekarang" : "Bayar Sekarang"}
               </button>
             </div>
           </aside>

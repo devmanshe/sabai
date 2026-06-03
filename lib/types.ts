@@ -4,6 +4,7 @@ export type CoupleGender = "boys" | "girls";
 export type CategoryKind = "agency" | "couple" | "gender";
 export type UserRole = "superadmin" | "admin" | "user";
 export type CurrencyCode = "IDR" | "USD" | "JPY";
+export type Gender = "male" | "female" | "other" | "prefer_not_to_say";
 export type PaymentMethodType =
   | "bank_transfer"
   | "virtual_account"
@@ -16,9 +17,8 @@ export type PaymentPlan = "full" | "dp";
 export type PaymentStatus =
   | "to_pay"
   | "pending"
-  | "partially_paid"
-  | "waiting_settlement"
-  | "paid"
+  | "dp_paid"
+  | "fully_paid"
   | "failed"
   | "refunded";
 export type OrderStatus =
@@ -114,9 +114,11 @@ export interface Order {
   baseGrandTotal: number;
   grandTotal: number;
   shipping_method?: "lion_parcel" | "shopee" | "tiktok";
+  shipment_status?: "on_going" | "arrived_indonesia";
   external_checkout_link?: string | null;
   external_order_id?: string | null;
   notes?: string | null;
+  settlementProofName?: string | null;
   // Midtrans fields
   midtrans_transaction_id?: string;
   midtrans_snap_token?: string;
@@ -139,6 +141,34 @@ export interface UserProfile {
   province: string;
   city: string;
   postalCode: string;
+  avatarUrl?: string | null;
+  avatarName?: string | null;
+  birthDate?: string | null;
+  gender?: Gender | "" | null;
+  defaultAddressId?: string | null;
+  addressBook?: AddressBookEntry[];
+  notifications?: ProfileNotificationSettings;
+}
+
+export interface AddressBookEntry {
+  id: string;
+  label: string;
+  recipientName: string;
+  phone: string;
+  address: string;
+  province: string;
+  city: string;
+  postalCode: string;
+  isDefault: boolean;
+}
+
+export interface ProfileNotificationSettings {
+  emailStatusOrder: boolean;
+  emailPayment: boolean;
+  emailShipping: boolean;
+  whatsappGo: boolean;
+  whatsappArrived: boolean;
+  whatsappLink: boolean;
 }
 
 export interface User {

@@ -10,12 +10,12 @@ import type { UserProfile, UserRole } from "@/lib/types";
 
 const isProfileComplete = (profile: UserProfile) => {
   return (
-    Boolean(profile.fullName) &&
-    Boolean(profile.phone) &&
-    Boolean(profile.address) &&
-    Boolean(profile.province) &&
-    Boolean(profile.city) &&
-    Boolean(profile.postalCode)
+    Boolean(profile.fullName.trim()) &&
+    /^\d{8,15}$/.test(profile.phone.trim()) &&
+    Boolean(profile.address.trim()) &&
+    Boolean(profile.province.trim()) &&
+    Boolean(profile.city.trim()) &&
+    /^\d{5}$/.test(profile.postalCode.trim())
   );
 };
 
@@ -236,15 +236,7 @@ export default function AuthPage() {
                   <option value="superadmin">Super Admin</option>
                 </select>
               </div>
-              <div className="auth-divider">Or with</div>
-              <div className="auth-socials">
-                <button type="button" className="auth-social-btn">
-                  Sign in with Google
-                </button>
-                <button type="button" className="auth-social-btn">
-                  Sign in with Apple
-                </button>
-              </div>
+              
               <button type="submit" className="auth-primary">
                 Sign In
               </button>
@@ -330,15 +322,7 @@ export default function AuthPage() {
               <label className="auth-checkbox">
                 <input type="checkbox" required /> I accept the Terms
               </label>
-              <div className="auth-divider">Or with</div>
-              <div className="auth-socials">
-                <button type="button" className="auth-social-btn">
-                  Sign up with Google
-                </button>
-                <button type="button" className="auth-social-btn">
-                  Sign up with Apple
-                </button>
-              </div>
+              
               <button type="submit" className="auth-primary">
                 Sign Up
               </button>

@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type {
   AdminUser,
+  AddressBookEntry,
   CartItem,
   Category,
   CurrencyCode,
@@ -11,6 +12,7 @@ import type {
   PaymentMethodType,
   PaymentStatus,
   Product,
+  ProfileNotificationSettings,
   SiteSettings,
   User,
   UserProfile,
@@ -94,7 +96,61 @@ const emptyProfile: UserProfile = {
   address: "",
   province: "",
   city: "",
-  postalCode: ""
+  postalCode: "",
+  avatarUrl: null,
+  avatarName: null,
+  birthDate: null,
+  gender: "",
+  defaultAddressId: null,
+  addressBook: [],
+  notifications: {
+    emailStatusOrder: true,
+    emailPayment: true,
+    emailShipping: true,
+    whatsappGo: true,
+    whatsappArrived: true,
+    whatsappLink: true
+  }
+};
+
+const defaultNotifications: ProfileNotificationSettings = {
+  emailStatusOrder: true,
+  emailPayment: true,
+  emailShipping: true,
+  whatsappGo: true,
+  whatsappArrived: true,
+  whatsappLink: true
+};
+
+const normalizeAddressBook = (addresses?: AddressBookEntry[] | null): AddressBookEntry[] =>
+  (addresses ?? []).map((address, index) => ({
+    id: address.id || `addr-${index + 1}`,
+    label: address.label || `Alamat ${index + 1}`,
+    recipientName: address.recipientName || "",
+    phone: address.phone || "",
+    address: address.address || "",
+    province: address.province || "",
+    city: address.city || "",
+    postalCode: address.postalCode || "",
+    isDefault: Boolean(address.isDefault)
+  }));
+
+const normalizeProfile = (profile?: Partial<UserProfile> | null): UserProfile => {
+  const addressBook = normalizeAddressBook(profile?.addressBook);
+  return {
+    ...emptyProfile,
+    ...(profile ?? {}),
+    avatarUrl: profile?.avatarUrl ?? null,
+    avatarName: profile?.avatarName ?? null,
+    birthDate: profile?.birthDate ?? null,
+    gender: profile?.gender ?? "",
+    defaultAddressId: profile?.defaultAddressId ?? null,
+    addressBook,
+    notifications: {
+      ...defaultNotifications,
+      ...(profile?.notifications ?? {})
+    }
+  };
 };
 
 const createOrderId = () => {
@@ -127,16 +183,15 @@ const normalizeOrder = (rawOrder: Partial<Order>): Order => {
   const normalizedStatus = rawStatus === "pre_order" ? "on_process" : ((rawOrder.status ?? "on_process") as Order["status"]);
 
   let normalizedPaymentStatus: PaymentStatus;
-  if (rawPaymentStatus === "to_pay" || rawPaymentStatus === "partially_paid" || rawPaymentStatus === "waiting_settlement" || rawPaymentStatus === "paid" || rawPaymentStatus === "failed" || rawPaymentStatus === "refunded" || rawPaymentStatus === "pending") {
+  if (rawPaymentStatus === "to_pay" || rawPaymentStatus === "pending" || rawPaymentStatus === "dp_paid" || rawPaymentStatus === "fully_paid" || rawPaymentStatus === "failed" || rawPaymentStatus === "refunded") {
     normalizedPaymentStatus = rawPaymentStatus as PaymentStatus;
-  } else if (rawPaymentStatus === "dp_paid") {
-    // Legacy: dp_paid → partially_paid
-    normalizedPaymentStatus = "partially_paid";
-  } else if (rawPaymentStatus === "fully_paid") {
-    // Legacy: fully_paid → paid
-    normalizedPaymentStatus = "paid";
+  } else if (rawPaymentStatus === "partially_paid") {
+    normalizedPaymentStatus = "dp_paid";
+  } else if (rawPaymentStatus === "paid") {
+    normalizedPaymentStatus = "fully_paid";
+  } else if (rawPaymentStatus === "waiting_settlement") {
+    normalizedPaymentStatus = "to_pay";
   } else if (rawPaymentStatus === "unpaid") {
-    // Legacy: unpaid → to_pay
     normalizedPaymentStatus = "to_pay";
   } else {
     normalizedPaymentStatus = "to_pay";
@@ -144,9 +199,9 @@ const normalizeOrder = (rawOrder: Partial<Order>): Order => {
 
   const safeAmountPaid = Number(
     rawOrder.amountPaid
-      ?? (normalizedPaymentStatus === "paid"
+      ?? (normalizedPaymentStatus === "fully_paid"
         ? safeGrandTotal
-        : normalizedPaymentStatus === "partially_paid"
+        : normalizedPaymentStatus === "dp_paid"
           ? Math.max(0, Math.round(safeGrandTotal * 0.3))
           : 0)
   );
@@ -177,9 +232,11 @@ const normalizeOrder = (rawOrder: Partial<Order>): Order => {
     baseGrandTotal: Number(rawOrder.baseGrandTotal ?? safeGrandTotal),
     grandTotal: safeGrandTotal,
     shipping_method: (rawOrder as any).shipping_method ?? "lion_parcel",
+    shipment_status: (rawOrder as any).shipment_status ?? "on_going",
     external_checkout_link: rawOrder.external_checkout_link ?? null,
     external_order_id: rawOrder.external_order_id ?? null,
     notes: rawOrder.notes ?? null,
+    settlementProofName: (rawOrder as any).settlementProofName ?? null,
     // Midtrans fields
     midtrans_transaction_id: rawOrder.midtrans_transaction_id ?? undefined,
     midtrans_snap_token: rawOrder.midtrans_snap_token ?? undefined,
@@ -191,12 +248,12 @@ const normalizeOrder = (rawOrder: Partial<Order>): Order => {
 const isProfileComplete = (profile?: UserProfile | null) => {
   if (!profile) return false;
   return (
-    Boolean(profile.fullName) &&
-    Boolean(profile.phone) &&
-    Boolean(profile.address) &&
-    Boolean(profile.province) &&
-    Boolean(profile.city) &&
-    Boolean(profile.postalCode)
+    Boolean(profile.fullName.trim()) &&
+    /^\d{8,15}$/.test(profile.phone.trim()) &&
+    Boolean(profile.address.trim()) &&
+    Boolean(profile.province.trim()) &&
+    Boolean(profile.city.trim()) &&
+    /^\d{5}$/.test(profile.postalCode.trim())
   );
 };
 
@@ -225,7 +282,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setCart(parsed.cart ?? []);
         setOrders((parsed.orders ?? []).map((rawOrder) => normalizeOrder(rawOrder)));
-        setMemberAccounts(parsed.memberAccounts ?? []);
+        setMemberAccounts((parsed.memberAccounts ?? []).map((account) => ({
+          ...account,
+          profile: normalizeProfile(account.profile)
+        })));
       } catch {
         setUser(null);
         setCart([]);
@@ -270,7 +330,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         username: identifier,
         email: identifier.includes("@") ? identifier : `${identifier}@sabaimerch.local`,
         role: "user",
-        profile: emptyProfile
+        profile: normalizeProfile(emptyProfile)
       };
 
       if (!existing) {
@@ -286,7 +346,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       username: identifier,
       email: identifier.includes("@") ? identifier : `${identifier}@sabaimerch.local`,
       role: safeRole,
-      profile: emptyProfile
+      profile: normalizeProfile(emptyProfile)
     };
     setUser(adminAccount);
     return adminAccount;
@@ -298,10 +358,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       username,
       email,
       role: "user",
-      profile: {
+      profile: normalizeProfile({
         ...emptyProfile,
         phone
-      }
+      })
     };
 
     setUser(newUser);
@@ -326,10 +386,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!user) return;
     const nextUser: User = {
       ...user,
-      profile: {
+      profile: normalizeProfile({
         ...user.profile,
         ...profile
-      }
+      })
     };
 
     setUser(nextUser);
@@ -411,6 +471,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     paymentReference,
     paymentStatus,
     paymentProofName,
+    settlementProofName,
     amountPaid,
     remainingAmount,
     orderStatus,
@@ -433,6 +494,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     paymentReference: string;
     paymentStatus: PaymentStatus;
     paymentProofName: string | null;
+    settlementProofName?: string | null;
     amountPaid: number;
     remainingAmount: number;
     orderStatus: Order["status"];
@@ -472,6 +534,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       paymentChannel,
       paymentReference,
       paymentProofName,
+      settlementProofName: settlementProofName ?? null,
       currency,
       exchangeRate,
       amountPaid,
