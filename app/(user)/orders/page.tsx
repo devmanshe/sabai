@@ -57,6 +57,25 @@ const formatMoney = (value: number, currency: "IDR" | "USD" | "JPY") =>
     maximumFractionDigits: currency === "IDR" ? 0 : 2
   }).format(value);
 
+const paymentChannelLabel = (channel: string) => {
+  switch (channel) {
+    case "qris":
+      return "QRIS";
+    case "bank_transfer":
+      return "BCA Transfer";
+    case "e_wallet":
+      return "E-Wallet";
+    case "virtual_account":
+      return "Virtual Account";
+    case "shopee":
+      return "Shopee Checkout";
+    case "tiktok":
+      return "TikTok Checkout";
+    default:
+      return channel.replace(/_/g, " ");
+  }
+};
+
 export default function OrdersPage() {
   const { orders, isReady } = useApp();
   const [activeTab, setActiveTab] = useState<"all" | OrderStatus>("all");
@@ -116,65 +135,47 @@ export default function OrdersPage() {
               </div>
             ) : (
               filteredOrders.map((order) => (
-                <article
+                <Link
                   key={order.id}
-                  className="rounded-2xl border border-[#e6e9ee] bg-white px-6 py-5 shadow-[0_4px_10px_rgba(31,58,84,0.08)]"
+                  href={`/orders/${encodeURIComponent(order.id.replace(/^#/, ""))}`}
+                  className="group block rounded-2xl border border-[#e6e9ee] bg-white px-6 py-5 shadow-[0_4px_10px_rgba(31,58,84,0.08)] transition hover:border-[#16a7be] hover:bg-sky-50"
+                  aria-label={`Lihat detail order ${order.id}`}
                 >
-                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                        <h2 className="text-xl font-bold tracking-tight text-[#1f3951]">
-                          {order.id}
-                        </h2>
-                        <span className="text-sm text-[#6f8196]">{formatDate(order.createdAt)}</span>
-                      </div>
-                      <p className="mt-1 text-[17px] text-[#596b80]">
-                        {order.itemCount} item(s) · {order.paymentMethod} · Ref {order.paymentReference}
-                      </p>
-                      <p className="mt-1 text-sm text-[#6f8196]">
-                        Payment: {paymentBadgeLabel[order.paymentStatus]}
-                        {order.paymentProofName ? ` · Bukti: ${order.paymentProofName}` : ""}
-                      </p>
-                      {order.status === "ready" && order.paymentType === "dp" && order.remainingAmount > 0 && (
-                        <div className="mt-2 space-y-2">
-                          <p className="text-sm font-semibold text-[#0f9ab4]">
-                            Barang telah tiba di Indonesia 🎉 Silakan lakukan pelunasan untuk melanjutkan pengiriman.
-                          </p>
-                          <Link
-                            href={`/checkout?settlementOrderId=${encodeURIComponent(order.id)}`}
-                            className="inline-flex rounded-full bg-[#16a7be] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1096ad]"
-                          >
-                            Lunasi Sekarang
-                          </Link>
+                  <div className="flex flex-col gap-5">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                          <h2 className="text-xl font-semibold tracking-tight text-[#1f3951]">{order.id}</h2>
+                          <span className="text-sm text-[#6f8196]">{formatDate(order.createdAt)}</span>
                         </div>
-                      )}
-                      {order.status === "ready" && order.shipping_method && order.shipping_method !== "lion_parcel" && (
-                        <p className="mt-1 text-sm text-[#6f8196]">
-                          Link checkout {order.shipping_method === "shopee" ? "Shopee" : "TikTok"} akan dikirim oleh admin.
+                        <p className="mt-2 text-sm text-[#5f6f82]">
+                          {order.itemCount} item(s) · {paymentChannelLabel(order.paymentChannel)}
                         </p>
-                      )}
-                      {order.status === "waiting_settlement" && (
-                        <p className="mt-1 text-sm font-semibold text-[#b26b00]">
-                          Menunggu verifikasi pelunasan dari admin.
-                        </p>
-                      )}
-                      {order.paymentType === "dp" && order.remainingAmount > 0 && (
-                        <p className="mt-1 text-sm font-semibold text-[#b26b00]">
-                          Sisa pembayaran: {formatMoney(order.remainingAmount, order.currency)}
-                        </p>
-                      )}
+                      </div>
+
+                      <div className="inline-flex items-center gap-3 self-start rounded-full bg-[#f3fbff] px-4 py-2 text-sm font-semibold text-[#0f79ab]">
+                        {badgeLabel[order.status]}
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-3 self-start md:self-center">
-                      <span className="rounded-full bg-[#d8ecff] px-4 py-1 text-sm font-semibold text-[#0b5dad]">
-                        {badgeLabel[order.status]}
-                      </span>
-                      <strong className="text-xl font-bold text-[#0f9ab4]">
-                        {formatMoney(order.grandTotal, order.currency)}
-                      </strong>
+                    <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+                      <div className="space-y-2">
+                        <p className="text-sm text-[#6f8196]">Payment</p>
+                        <p className="text-base font-semibold text-[#203247]">{paymentBadgeLabel[order.paymentStatus]}</p>
+                        {(order.status === "to_pay" || (order.paymentType === "dp" && order.remainingAmount > 0)) && (
+                          <p className="text-sm text-[#b26b00]">Sisa pembayaran: {formatMoney(order.remainingAmount, order.currency)}</p>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-3 justify-end">
+                        <strong className="text-2xl font-bold text-[#0f9ab4]">{formatMoney(order.grandTotal, order.currency)}</strong>
+                        <span className="inline-flex rounded-full bg-[#eef8ff] px-4 py-2 text-sm font-semibold text-[#0f79ab]">
+                          Lihat Detail
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </article>
+                </Link>
               ))
             )}
           </div>
