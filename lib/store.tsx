@@ -312,12 +312,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const login = ({ identifier, role }: { identifier: string; password: string; role?: UserRole }) => {
     const safeRole: UserRole = role ??
       (identifier.toLowerCase().includes("super")
-        ? "superadmin"
+        ? "Superadmin"
         : identifier.toLowerCase().includes("admin")
-          ? "admin"
-          : "user");
+          ? "Admin"
+          : "Buyer");
 
-    if (safeRole === "user") {
+    if (safeRole === "Buyer") {
       const normalizedIdentifier = identifier.trim().toLowerCase();
       const existing = memberAccounts.find((account) => {
         const username = account.username.trim().toLowerCase();
@@ -329,8 +329,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         name: identifier || "Sabai Member",
         username: identifier,
         email: identifier.includes("@") ? identifier : `${identifier}@sabaimerch.local`,
+<<<<<<< Updated upstream
         role: "user",
         profile: normalizeProfile(emptyProfile)
+=======
+        role: "Buyer",
+        profile: emptyProfile
+>>>>>>> Stashed changes
       };
 
       if (!existing) {
@@ -357,8 +362,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       name,
       username,
       email,
+<<<<<<< Updated upstream
       role: "user",
       profile: normalizeProfile({
+=======
+      role: "Buyer",
+      profile: {
+>>>>>>> Stashed changes
         ...emptyProfile,
         phone
       })
@@ -394,7 +404,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     setUser(nextUser);
 
-    if (nextUser.role === "user") {
+    if (nextUser.role === "Buyer") {
       setMemberAccounts((prev) =>
         prev.map((account) => {
           const sameUsername = account.username.toLowerCase() === nextUser.username.toLowerCase();

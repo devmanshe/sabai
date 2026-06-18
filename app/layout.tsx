@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
-import { Fraunces, Manrope } from "next/font/google";
+import { Fraunces, Manrope, Inter } from "next/font/google";
 import "./globals.css";
 import "../style.css";
 import { AppProvider } from "@/lib/store";
+import { cn } from "@/lib/utils";
+import QueryProvider from "@/lib/provider";
+
+const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -19,9 +23,9 @@ export const metadata: Metadata = {
   description: "Group order hub for Thailand merchandise"
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={cn("font-sans", inter.variable)}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -30,8 +34,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body className={`${manrope.variable} ${fraunces.variable}`}>
-        <AppProvider>{children}</AppProvider>
+      <body className={`${manrope.variable} ${fraunces.variable} m-10`}>
+        <AppProvider>
+            <QueryProvider>
+              {children}
+            </QueryProvider>
+        </AppProvider>
+        
       </body>
     </html>
   );

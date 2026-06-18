@@ -19,6 +19,7 @@
     "jsx": "react-jsx",
     "incremental": true,
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
     "paths": {
       "@/*": [
         "./*"
@@ -35,7 +36,8 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    "src"
   ],
   "exclude": [
     "node_modules"

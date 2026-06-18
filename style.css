@@ -24,7 +24,7 @@
 body {
   font-family: "Manrope", sans-serif;
   color: var(--ink);
-  background: radial-gradient(circle at top, #ffffff 0%, var(--sand) 52%, #e9e6e3 100%);
+  /* background: radial-gradient(circle at top, #ffffff 0%, var(--sand) 52%, #e9e6e3 100%); */
   line-height: 1.5;
 }
 

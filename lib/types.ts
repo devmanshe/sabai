@@ -2,7 +2,7 @@ export type ProductStatus = "preorder" | "instock" | "closed";
 export type ProductCategory = "agency" | "couple" | "more";
 export type CoupleGender = "boys" | "girls";
 export type CategoryKind = "agency" | "couple" | "gender";
-export type UserRole = "superadmin" | "admin" | "user";
+export type UserRole = "Superadmin" | "Admin" | "Buyer";
 export type CurrencyCode = "IDR" | "USD" | "JPY";
 export type Gender = "male" | "female" | "other" | "prefer_not_to_say";
 export type PaymentMethodType =
@@ -38,14 +38,14 @@ export interface Product {
   name: string;
   description: string;
   price: number;
-  rating?: number;
+  rating?: string;
   reviews?: number;
   status: ProductStatus;
   category: ProductCategory;
   agencyId?: string;
   coupleGender?: CoupleGender;
   image?: string;
-  stock: number;
+  stock?: number;
   deadline?: string; // ISO date string for preorder deadline
   createdAt?: string;
   updatedAt?: string;

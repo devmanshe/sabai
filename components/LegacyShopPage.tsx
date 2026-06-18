@@ -269,7 +269,7 @@ export default function LegacyShopPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (notice !== "complete-profile" || user?.role !== "user") return;
+    if (notice !== "complete-profile" || user?.role !== "Buyer") return;
 
     setShowProfileToast(true);
 
