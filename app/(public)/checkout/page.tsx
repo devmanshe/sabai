@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SiteShell from "@/components/SiteShell";
 import { formatCurrency } from "@/lib/format";
@@ -26,7 +26,7 @@ const getArrivalEstimate = (product: Product) => {
 
 const DP_PERCENT = 0.3;
 
-export default function CheckoutPage() {
+function CheckoutPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const settlementOrderId = searchParams.get("settlementOrderId");
@@ -503,3 +503,5 @@ export default function CheckoutPage() {
     </SiteShell>
   );
 }
+
+export default function CheckoutPage() { return <Suspense fallback={null}><CheckoutPageContent /></Suspense>; }

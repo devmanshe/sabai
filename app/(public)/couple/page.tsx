@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SiteShell from "@/components/SiteShell";
 import ProductCard from "@/components/ProductCard";
 import { useApp } from "@/lib/store";
 
-export default function CouplePage() {
+function CouplePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { products, categories } = useApp();
@@ -152,3 +152,5 @@ export default function CouplePage() {
     </SiteShell>
   );
 }
+
+export default function CouplePage() { return <Suspense fallback={null}><CouplePageContent /></Suspense>; }

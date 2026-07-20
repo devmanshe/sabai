@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useApp } from "@/lib/store";
 import type { Order } from "@/lib/types";
@@ -58,7 +58,7 @@ const getStatusDisplay = (stage: AdminOrderStage, order: Order) => {
   return stage;
 };
 
-export default function AdminOrdersPage() {
+function AdminOrdersPageContent() {
   const { orders } = useApp();
   const searchParams = useSearchParams();
   const globalQuery = (searchParams.get("q") ?? "").toLowerCase();
@@ -192,3 +192,5 @@ export default function AdminOrdersPage() {
     </section>
   );
 }
+
+export default function AdminOrdersPage() { return <Suspense fallback={null}><AdminOrdersPageContent /></Suspense>; }

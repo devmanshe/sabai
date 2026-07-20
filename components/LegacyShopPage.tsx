@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useApp } from "@/lib/store";
@@ -261,7 +261,7 @@ function ProductCard({ product, mini }: { product: LegacyProduct; mini?: boolean
   );
 }
 
-export default function LegacyShopPage() {
+function LegacyShopPageContent() {
   const { user, cartCount, logout, categories } = useApp();
   const router = useRouter();
   const pathname = usePathname();
@@ -819,3 +819,5 @@ export default function LegacyShopPage() {
     </div>
   );
 }
+
+export default function LegacyShopPage() { return <Suspense fallback={null}><LegacyShopPageContent /></Suspense>; }

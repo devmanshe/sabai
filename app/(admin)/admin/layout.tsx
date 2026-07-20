@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { RequireRole } from "@/components/Protected";
 import { AppProvider, useApp } from "@/lib/store";
 
@@ -23,7 +23,7 @@ const superAdminLinks = [
   { label: "Settings", href: "/admin/settings" }
 ];
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -47,7 +47,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     router.replace(queryString ? `${pathname}?${queryString}` : pathname);
   };
 
-  const isSuperAdmin = user?.role === "Superadmin";
+  const isSuperAdmin = user?.role === "superadmin";
   const links = isSuperAdmin ? superAdminLinks : adminLinks;
   const title = isSuperAdmin ? "Super Admin Control" : "Admin Control";
   const subtitle = isSuperAdmin
@@ -63,7 +63,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <AppProvider>
-    <RequireRole roles={["Admin", "Superadmin"]}>
+    <RequireRole roles={["admin", "superadmin"]}>
       <div className="min-h-screen bg-[#eff2f8] p-3 md:p-4">
         <div className="mx-auto grid max-w-[1500px] gap-4 lg:grid-cols-[240px_1fr]">
           <button
@@ -166,5 +166,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
     </RequireRole>
     </AppProvider>
+  );
+}
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={null}>
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </Suspense>
   );
 }

@@ -14,6 +14,9 @@
   --status-preorder: #F2C94C;
   --status-instock: #27AE60;
   --status-closed: #EB5757;
+  --font-sans: 'Inter', sans-serif;
+  --font-manrope: 'Manrope', sans-serif;
+  --font-fraunces: 'Fraunces', serif;
 }
 
 @layer base {

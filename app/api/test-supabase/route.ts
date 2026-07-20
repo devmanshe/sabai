@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase' // Sesuaikan path jika berlokasi di service/
+import { supabase } from '@/lib/supabase'
 
 export async function GET() {
   try {
-    const supabase = await createClient()
-
     // Kita coba fetch dari tabel profiles yang tadi dibuat
     // Ingat: Karena RLS ketat dan kita tidak login, ini harusnya mengembalikan array kosong []
     // Tapi jika berhasil mengembalikan [], artinya KONEKSI BERHASIL tanpa error server.
