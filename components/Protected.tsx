@@ -2,12 +2,11 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import type { UserRole } from "@/lib/types";
-import { useApp } from "@/lib/store";
+import { useSession } from "@/hooks/useSession";
 
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { user, isReady } = useApp();
+  const { user, isReady } = useSession()
 
   useEffect(() => {
     if (isReady && !user) {
@@ -26,15 +25,16 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-export function RequireRole({ roles, children }: { roles: UserRole[]; children: React.ReactNode }) {
+export function RequireRole({ roles, children }: { roles: string[]; children: React.ReactNode }) {
   const router = useRouter();
-  const { user, isReady } = useApp();
+  const { user, isReady } = useSession()
+  const role = user?.user_metadata?.role as string | undefined
 
   useEffect(() => {
-    if (isReady && (!user || !roles.includes(user.role))) {
+    if (isReady && (!user || !roles.includes(role ?? ""))) {
       router.replace("/");
     }
-  }, [isReady, user, roles, router]);
+  }, [isReady, user, role, roles, router]);
 
   if (!isReady || !user) {
     return (
@@ -44,7 +44,7 @@ export function RequireRole({ roles, children }: { roles: UserRole[]; children: 
     );
   }
 
-  if (!roles.includes(user.role)) {
+  if (!role || !roles.includes(role)) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-text">
         Access restricted.

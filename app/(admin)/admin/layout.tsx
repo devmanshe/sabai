@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { RequireRole } from "@/components/Protected";
-import { useApp } from "@/lib/store";
+import { AppProvider, useApp } from "@/lib/store";
 
 const adminLinks = [
   { label: "Dashboard", href: "/admin" },
@@ -47,7 +47,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     router.replace(queryString ? `${pathname}?${queryString}` : pathname);
   };
 
-  const isSuperAdmin = user?.role === "superadmin";
+  const isSuperAdmin = user?.role === "Superadmin";
   const links = isSuperAdmin ? superAdminLinks : adminLinks;
   const title = isSuperAdmin ? "Super Admin Control" : "Admin Control";
   const subtitle = isSuperAdmin
@@ -62,7 +62,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     .join("");
 
   return (
-    <RequireRole roles={["admin", "superadmin"]}>
+    <AppProvider>
+    <RequireRole roles={["Admin", "Superadmin"]}>
       <div className="min-h-screen bg-[#eff2f8] p-3 md:p-4">
         <div className="mx-auto grid max-w-[1500px] gap-4 lg:grid-cols-[240px_1fr]">
           <button
@@ -159,10 +160,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
             </div>
 
-            <div>{children}</div>
+            <AppProvider>{children}</AppProvider>
           </div>
         </div>
       </div>
     </RequireRole>
+    </AppProvider>
   );
 }
