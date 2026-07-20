@@ -45,20 +45,44 @@ export interface Product {
   agencyId?: string;
   coupleGender?: CoupleGender;
   image?: string;
+  imageUrls?: string[];
   stock: number;
   deadline?: string; // ISO date string for preorder deadline
   createdAt?: string;
   updatedAt?: string;
 }
 
+export interface ProductImage {
+  id: string;
+  productId: string;
+  imageUrl: string;
+  isPrimary: boolean;
+  createdAt?: string;
+}
+
 export interface Category {
   id: string;
-  kind: CategoryKind;
+  kind?: CategoryKind;
   name: string;
   parentId?: string;
   locked?: boolean;
   description?: string;
   createdAt?: string;
+  updatedAt?: string;
+  slug?: string;
+  imageUrl?: string | null;
+  isActive?: boolean;
+}
+
+export interface BannerItem {
+  id: string;
+  title: string;
+  subtitle?: string | null;
+  description: string;
+  ctaLabel: string;
+  href: string;
+  image?: string | null;
+  accent?: string;
 }
 
 export interface AdminUser {
@@ -159,6 +183,7 @@ export interface AddressBookEntry {
   province: string;
   city: string;
   postalCode: string;
+  notes?: string | null;
   isDefault: boolean;
 }
 
@@ -172,6 +197,7 @@ export interface ProfileNotificationSettings {
 }
 
 export interface User {
+  id: string;
   name: string;
   username: string;
   email: string;

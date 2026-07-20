@@ -42,7 +42,7 @@ export default function AdminOrderDetailPage() {
 
   const order = useMemo(() => orders.find((entry) => entry.id === orderId) ?? null, [orders, orderId]);
   const stage = order ? mapOrderToStage(order) : null;
-  const paidButtonLabel = order.status === "waiting_settlement" ? "Approve Settlement" : "Mark as Paid";
+  const paidButtonLabel = order?.status === "waiting_settlement" ? "Approve Settlement" : "Mark as Paid";
 
   if (!order) {
     return (

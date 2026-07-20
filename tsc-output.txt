@@ -1,0 +1,150 @@
+npm warn Unknown cli config "--noEmit". This will stop working in the next major version of npm.
+.next/dev/types/validator.ts(6,59): error TS2307: Cannot find module 'next/types.js' or its corresponding type declarations.
+.next/types/validator.ts(6,59): error TS2307: Cannot find module 'next/types.js' or its corresponding type declarations.
+app/(admin)/admin/customers/page.tsx(37,10): error TS2322: Type '{ children: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(admin)/admin/layout.tsx(4,57): error TS2307: Cannot find module 'next/navigation' or its corresponding type declarations.
+app/(admin)/admin/layout.tsx(98,20): error TS2322: Type '{ children: (string | Element)[]; key: string; href: string; onClick: () => void; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(admin)/admin/orders/[id]/page.tsx(5,27): error TS2307: Cannot find module 'next/navigation' or its corresponding type declarations.
+app/(admin)/admin/orders/[id]/page.tsx(45,27): error TS18047: 'order' is possibly 'null'.
+app/(admin)/admin/orders/[id]/page.tsx(51,10): error TS2322: Type '{ children: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(admin)/admin/orders/[id]/page.tsx(152,10): error TS2322: Type '{ children: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(admin)/admin/orders/page.tsx(5,33): error TS2307: Cannot find module 'next/navigation' or its corresponding type declarations.
+app/(admin)/admin/orders/page.tsx(166,22): error TS2322: Type '{ children: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(admin)/admin/orders/page.tsx(182,22): error TS2322: Type '{ children: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(admin)/admin/page.tsx(5,33): error TS2307: Cannot find module 'next/navigation' or its corresponding type declarations.
+app/(admin)/admin/page.tsx(29,7): error TS2367: This comparison appears to be unintentional because the types 'PaymentStatus' and '"unpaid"' have no overlap.
+app/(admin)/admin/page.tsx(220,14): error TS2322: Type '{ children: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(admin)/admin/page.tsx(247,14): error TS2322: Type '{ children: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(admin)/admin/page.tsx(275,18): error TS2322: Type '{ children: Element[]; key: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(admin)/admin/products/page.tsx(79,7): error TS2322: Type 'ProductCategory' is not assignable to type '"agency"'.
+  Type '"couple"' is not assignable to type '"agency"'.
+app/(admin)/admin/products/page.tsx(82,7): error TS2322: Type 'ProductStatus' is not assignable to type '"instock"'.
+  Type '"preorder"' is not assignable to type '"instock"'.
+app/(admin)/admin/products/page.tsx(206,24): error TS2367: This comparison appears to be unintentional because the types '"agency"' and '"couple"' have no overlap.
+app/(admin)/admin/products/page.tsx(223,20): error TS2367: This comparison appears to be unintentional because the types '"agency"' and '"couple"' have no overlap.
+app/(admin)/admin/products/page.tsx(245,18): error TS2367: This comparison appears to be unintentional because the types '"instock"' and '"preorder"' have no overlap.
+app/(admin)/admin/users/page.tsx(55,7): error TS2322: Type 'UserRole' is not assignable to type '"user"'.
+  Type '"superadmin"' is not assignable to type '"user"'.
+app/(admin)/admin/users/page.tsx(56,7): error TS2322: Type '"active" | "inactive" | "banned"' is not assignable to type '"active"'.
+  Type '"inactive"' is not assignable to type '"active"'.
+app/(public)/auth/page.tsx(4,33): error TS2307: Cannot find module 'next/navigation' or its corresponding type declarations.
+app/(public)/auth/page.tsx(5,27): error TS2307: Cannot find module 'next/navigation' or its corresponding type declarations.
+app/(public)/cart/page.tsx(27,16): error TS2322: Type '{ children: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(public)/cart/page.tsx(82,18): error TS2322: Type '{ children: (string | number)[]; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(public)/checkout/page.tsx(5,44): error TS2307: Cannot find module 'next/navigation' or its corresponding type declarations.
+app/(public)/checkout/page.tsx(194,7): error TS2353: Object literal may only specify known properties, and 'shipping_method' does not exist in type '{ paymentMethodId: string; paymentMethod: string; paymentType: PaymentPlan; paymentChannel: PaymentMethodType; shippingCost: number; currency: CurrencyCode; ... 6 more ...; orderStatus: OrderStatus; }'.
+app/(public)/checkout/page.tsx(239,18): error TS2322: Type '{ children: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(public)/couple/page.tsx(4,44): error TS2307: Cannot find module 'next/navigation' or its corresponding type declarations.
+app/(public)/product/[id]/page.tsx(4,19): error TS2307: Cannot find module 'next/image' or its corresponding type declarations.
+app/(public)/product/[id]/page.tsx(6,38): error TS2307: Cannot find module 'next/navigation' or its corresponding type declarations.
+app/(public)/product/[id]/page.tsx(53,12): error TS2322: Type '{ children: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(public)/product/[id]/page.tsx(170,16): error TS2322: Type '{ children: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(public)/product/[id]/page.tsx(172,16): error TS2322: Type '{ children: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(public)/product/[id]/page.tsx(382,16): error TS2322: Type '{ children: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(public)/product/[id]/page.tsx(402,12): error TS2322: Type '{ children: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(public)/product/[id]/page.tsx(412,16): error TS2322: Type '{ children: Element[]; key: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(user)/dashboard/page.tsx(25,16): error TS2322: Type '{ children: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(user)/dashboard/page.tsx(32,16): error TS2322: Type '{ children: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(user)/orders/[id]/page.tsx(4,27): error TS2307: Cannot find module 'next/navigation' or its corresponding type declarations.
+app/(user)/orders/[id]/page.tsx(12,7): error TS2741: Property 'waiting_external' is missing in type '{ to_pay: { label: string; className: string; }; on_process: { label: string; className: string; }; ready: { label: string; className: string; }; waiting_settlement: { label: string; className: string; }; ... 4 more ...; returned: { ...; }; }' but required in type 'Record<OrderStatus, { label: string; className: string; }>'.
+app/(user)/orders/[id]/page.tsx(38,35): error TS2344: Type 'string | undefined' does not satisfy the constraint 'string | number | symbol'.
+  Type 'undefined' is not assignable to type 'string | number | symbol'.
+app/(user)/orders/[id]/page.tsx(56,30): error TS2538: Type 'undefined' cannot be used as an index type.
+app/(user)/orders/[id]/page.tsx(185,16): error TS2322: Type '{ children: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(user)/orders/[id]/page.tsx(222,14): error TS2322: Type '{ children: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(user)/orders/[id]/page.tsx(388,22): error TS2322: Type '{ children: string[]; href: string; target: string; rel: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(user)/orders/[id]/page.tsx(452,22): error TS2322: Type '{ children: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(user)/orders/[id]/page.tsx(461,22): error TS2322: Type '{ children: string[]; href: string; target: string; rel: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(user)/orders/[id]/page.tsx(481,22): error TS2322: Type '{ children: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/(user)/orders/page.tsx(23,7): error TS2741: Property 'waiting_external' is missing in type '{ to_pay: string; on_process: string; ready: string; waiting_settlement: string; to_ship: string; to_receive: string; completed: string; cancelled: string; returned: string; }' but required in type 'Record<OrderStatus, string>'.
+app/(user)/orders/page.tsx(138,18): error TS2322: Type '{ children: Element; key: string; href: string; className: string; "aria-label": string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+app/layout.tsx(1,15): error TS2614: Module '"next"' has no exported member 'Metadata'. Did you mean to use 'import Metadata from "next"' instead?
+app/layout.tsx(2,35): error TS2307: Cannot find module 'next/font/google' or its corresponding type declarations.
+components/LegacyShopPage.tsx(5,57): error TS2307: Cannot find module 'next/navigation' or its corresponding type declarations.
+components/LegacyShopPage.tsx(10,11): error TS2430: Interface 'LegacyProduct' incorrectly extends interface 'Product'.
+  Types of property 'rating' are incompatible.
+    Type 'string' is not assignable to type 'number'.
+components/LegacyShopPage.tsx(17,3): error TS2741: Property 'stock' is missing in type '{ id: string; name: string; description: string; price: number; status: "preorder"; category: "agency"; agencyId: string; rating: string; label: string; accent: string; }' but required in type 'LegacyProduct'.
+components/LegacyShopPage.tsx(29,3): error TS2741: Property 'stock' is missing in type '{ id: string; name: string; description: string; price: number; status: "instock"; category: "couple"; agencyId: string; coupleGender: "boys"; rating: string; label: string; accent: string; }' but required in type 'LegacyProduct'.
+components/LegacyShopPage.tsx(42,3): error TS2741: Property 'stock' is missing in type '{ id: string; name: string; description: string; price: number; status: "closed"; category: "more"; agencyId: string; rating: string; label: string; accent: string; }' but required in type 'LegacyProduct'.
+components/LegacyShopPage.tsx(54,3): error TS2741: Property 'stock' is missing in type '{ id: string; name: string; description: string; price: number; status: "instock"; category: "agency"; agencyId: string; rating: string; label: string; accent: string; }' but required in type 'LegacyProduct'.
+components/LegacyShopPage.tsx(66,3): error TS2741: Property 'stock' is missing in type '{ id: string; name: string; description: string; price: number; status: "preorder"; category: "couple"; agencyId: string; coupleGender: "girls"; rating: string; label: string; accent: string; }' but required in type 'LegacyProduct'.
+components/LegacyShopPage.tsx(79,3): error TS2741: Property 'stock' is missing in type '{ id: string; name: string; description: string; price: number; status: "closed"; category: "more"; agencyId: string; rating: string; label: string; accent: string; }' but required in type 'LegacyProduct'.
+components/LegacyShopPage.tsx(94,3): error TS2741: Property 'stock' is missing in type '{ id: string; name: string; description: string; price: number; status: "preorder"; category: "couple"; agencyId: string; coupleGender: "boys"; rating: string; label: string; accent: string; }' but required in type 'LegacyProduct'.
+components/LegacyShopPage.tsx(107,3): error TS2741: Property 'stock' is missing in type '{ id: string; name: string; description: string; price: number; status: "instock"; category: "agency"; agencyId: string; rating: string; label: string; accent: string; }' but required in type 'LegacyProduct'.
+components/LegacyShopPage.tsx(119,3): error TS2741: Property 'stock' is missing in type '{ id: string; name: string; description: string; price: number; status: "closed"; category: "couple"; agencyId: string; coupleGender: "girls"; rating: string; label: string; accent: string; }' but required in type 'LegacyProduct'.
+components/LegacyShopPage.tsx(171,15): error TS2345: Argument of type 'LegacyProduct' is not assignable to parameter of type 'Product'.
+  Types of property 'rating' are incompatible.
+    Type 'string' is not assignable to type 'number'.
+components/LegacyShopPage.tsx(184,15): error TS2345: Argument of type 'LegacyProduct' is not assignable to parameter of type 'Product'.
+  Types of property 'rating' are incompatible.
+    Type 'string' is not assignable to type 'number'.
+components/LegacyShopPage.tsx(207,10): error TS2322: Type '{ children: string; href: string; style: { textDecoration: string; color: string; }; onClick: (event: any) => any; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+components/LegacyShopPage.tsx(210,21): error TS7006: Parameter 'event' implicitly has an 'any' type.
+components/LegacyShopPage.tsx(355,12): error TS2322: Type '{ children: string; className: string; href: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+components/LegacyShopPage.tsx(384,12): error TS2322: Type '{ children: string; href: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+components/LegacyShopPage.tsx(411,12): error TS2322: Type '{ children: Element; href: string; className: string; "aria-label": string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+components/LegacyShopPage.tsx(422,12): error TS2322: Type '{ children: (false | Element)[]; href: string; className: string; "aria-label": string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+components/LegacyShopPage.tsx(446,16): error TS2322: Type '{ children: Element; href: string; className: string; "aria-label": string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+components/LegacyShopPage.tsx(453,18): error TS2322: Type '{ children: string; href: string; onClick: () => void; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+components/LegacyShopPage.tsx(456,18): error TS2322: Type '{ children: string; href: string; onClick: () => void; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+components/Navbar.tsx(4,19): error TS2307: Cannot find module 'next/image' or its corresponding type declarations.
+components/Navbar.tsx(6,27): error TS2307: Cannot find module 'next/navigation' or its corresponding type declarations.
+components/Navbar.tsx(67,12): error TS2322: Type '{ children: Element; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+components/Navbar.tsx(72,14): error TS2322: Type '{ children: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+components/Navbar.tsx(113,14): error TS2322: Type '{ children: string; href: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+components/Navbar.tsx(150,14): error TS2322: Type '{ children: Element; href: string; "aria-label": string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+components/Navbar.tsx(165,14): error TS2322: Type '{ children: (false | Element)[]; href: string; "aria-label": string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+components/Navbar.tsx(197,18): error TS2322: Type '{ children: string; href: string; "aria-label": string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+components/Navbar.tsx(208,20): error TS2322: Type '{ children: string; href: string; onClick: () => void; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+components/Navbar.tsx(215,20): error TS2322: Type '{ children: string; href: string; onClick: () => void; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+components/ProductCard.tsx(5,27): error TS2307: Cannot find module 'next/navigation' or its corresponding type declarations.
+components/ProductCard.tsx(97,12): error TS2322: Type '{ children: string; href: string; className: string; onClick: (event: any) => any; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Link> & Readonly<LinkProps>'.
+components/ProductCard.tsx(100,23): error TS7006: Parameter 'event' implicitly has an 'any' type.
+components/Protected.tsx(4,27): error TS2307: Cannot find module 'next/navigation' or its corresponding type declarations.
+components/SearchBar.tsx(4,57): error TS2307: Cannot find module 'next/navigation' or its corresponding type declarations.
+components/SidebarFilter.tsx(3,57): error TS2307: Cannot find module 'next/navigation' or its corresponding type declarations.

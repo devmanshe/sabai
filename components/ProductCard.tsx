@@ -90,8 +90,19 @@ export default function ProductCard({ product, compact }: ProductCardProps) {
             {agencyName ? agencyName : categoryLabels[product.category]}
           </span>
         </div>
-        <div className={`product-card-image flex ${imageHeight} items-center justify-center rounded-2xl bg-gradient-to-br from-ice via-white to-fog text-ink/60`}>
-          <span className="text-xs font-semibold uppercase tracking-[0.2em]">Sabai</span>
+        <div className={`product-card-image flex ${imageHeight} items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-ice via-white to-fog text-ink/60`}>
+          {product.image ? (
+            <img
+              src={product.image}
+              alt={product.name}
+              className="h-full w-full object-cover"
+              onError={(event) => {
+                (event.currentTarget as HTMLImageElement).src = "/img/Logo%20w%20Text.png";
+              }}
+            />
+          ) : (
+            <span className="text-xs font-semibold uppercase tracking-[0.2em]">Sabai</span>
+          )}
         </div>
         <div className="space-y-2">
           <Link

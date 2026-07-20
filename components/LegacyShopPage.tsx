@@ -4,13 +4,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useApp } from "@/lib/store";
-import type { Product, ProductCategory, ProductStatus } from "@/lib/types";
+import type { BannerItem, Category, Product, ProductStatus } from "@/lib/types";
+import { banners } from "@/lib/data";
 import AppToast from "@/components/AppToast";
 
 interface LegacyProduct extends Product {
-  rating: string;
+  rating: number;
   label: string;
   accent: string;
+  categoryTag?: string;
 }
 
 const legacyProducts: LegacyProduct[] = [
@@ -22,7 +24,10 @@ const legacyProducts: LegacyProduct[] = [
     status: "preorder",
     category: "agency",
     agencyId: "agency-gmm",
-    rating: "5.0 (2k Reviews)",
+    categoryTag: "f2cdd76b-f873-4d9d-8a79-c097854093af",
+    rating: 5.0,
+    reviews: 2000,
+    stock: 45,
     label: "Pre-Order",
     accent: "accent-1"
   },
@@ -34,8 +39,11 @@ const legacyProducts: LegacyProduct[] = [
     status: "instock",
     category: "couple",
     agencyId: "agency-gmm",
+    categoryTag: "33ed337d-2212-410d-8fac-fc17338abf23",
     coupleGender: "boys",
-    rating: "4.9 (1.2k Reviews)",
+    rating: 4.9,
+    reviews: 1200,
+    stock: 120,
     label: "In Stock",
     accent: "accent-2"
   },
@@ -47,7 +55,9 @@ const legacyProducts: LegacyProduct[] = [
     status: "closed",
     category: "more",
     agencyId: "agency-riser",
-    rating: "4.4 (1k Reviews)",
+    rating: 4.4,
+    reviews: 1000,
+    stock: 0,
     label: "Closed",
     accent: "accent-3"
   },
@@ -59,7 +69,10 @@ const legacyProducts: LegacyProduct[] = [
     status: "instock",
     category: "agency",
     agencyId: "agency-riser",
-    rating: "4.8 (120 Reviews)",
+    categoryTag: "518cc369-69d1-4aa6-a4a9-3ea38713397e0",
+    rating: 4.8,
+    reviews: 120,
+    stock: 18,
     label: "In Stock",
     accent: "accent-4"
   },
@@ -71,8 +84,11 @@ const legacyProducts: LegacyProduct[] = [
     status: "preorder",
     category: "couple",
     agencyId: "agency-gmm",
+    categoryTag: "915e0bd6-b110-44e1-bfa3-9d7acd6aad84",
     coupleGender: "girls",
-    rating: "4.8 (2k Reviews)",
+    rating: 4.8,
+    reviews: 2000,
+    stock: 50,
     label: "Pre-Order",
     accent: "accent-5"
   },
@@ -84,7 +100,9 @@ const legacyProducts: LegacyProduct[] = [
     status: "closed",
     category: "more",
     agencyId: "agency-riser",
-    rating: "4.8 (2.4k Reviews)",
+    rating: 4.8,
+    reviews: 2400,
+    stock: 0,
     label: "Closed",
     accent: "accent-6"
   }
@@ -100,7 +118,9 @@ const recommendationProducts: LegacyProduct[] = [
     category: "couple",
     agencyId: "agency-alt",
     coupleGender: "boys",
-    rating: "4.6 (1.2k Reviews)",
+    rating: 4.6,
+    reviews: 1200,
+    stock: 60,
     label: "Pre-Order",
     accent: "accent-2"
   },
@@ -112,7 +132,9 @@ const recommendationProducts: LegacyProduct[] = [
     status: "instock",
     category: "agency",
     agencyId: "agency-alt",
-    rating: "5.0 (2k Reviews)",
+    rating: 5.0,
+    reviews: 2000,
+    stock: 85,
     label: "In Stock",
     accent: "accent-5"
   },
@@ -125,7 +147,9 @@ const recommendationProducts: LegacyProduct[] = [
     category: "couple",
     agencyId: "agency-gmm",
     coupleGender: "girls",
-    rating: "4.4 (1k Reviews)",
+    rating: 4.4,
+    reviews: 1000,
+    stock: 0,
     label: "Closed",
     accent: "accent-3"
   }
@@ -136,13 +160,6 @@ const statusOptions: { value: ProductStatus | "all"; label: string }[] = [
   { value: "preorder", label: "Pre-order" },
   { value: "instock", label: "In Stock" },
   { value: "closed", label: "Closed" }
-];
-
-const categoryOptions: { value: ProductCategory | "all"; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "agency", label: "Agency" },
-  { value: "couple", label: "Couple" },
-  { value: "more", label: "More" }
 ];
 
 const getInitials = (name: string) =>
@@ -263,6 +280,27 @@ export default function LegacyShopPage() {
   const notice = searchParams.get("notice");
   const agencyOptions = categories.filter((entry) => entry.kind === "agency");
   const genderOptions = categories.filter((entry) => entry.kind === "gender");
+  const categoryOptions = useMemo(() => {
+    const popularSlugs = ["photocard", "postcard", "polaroid", "t-shirt"];
+    const popular = popularSlugs
+      .map((slug) => categories.find((entry) => entry.slug === slug))
+      .filter((entry): entry is Category => Boolean(entry))
+      .map((entry) => ({ value: entry.id, label: entry.name }));
+
+    const fallback = categories
+      .filter((entry) => entry.kind !== "gender" && !popularSlugs.includes(entry.slug ?? ""))
+      .slice(0, Math.max(0, 4 - popular.length))
+      .map((entry) => ({ value: entry.id, label: entry.name }));
+
+    return [
+      ...popular,
+      ...fallback,
+      { value: "more", label: "More" }
+    ];
+  }, [categories]);
+  const moreCategories = useMemo(() => categories.filter((entry) => entry.kind !== "gender"), [categories]);
+  const [showMorePopup, setShowMorePopup] = useState(false);
+  const morePopupRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setSearchValue(searchParams.get("q") ?? "");
@@ -307,6 +345,19 @@ export default function LegacyShopPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [openNavMenu]);
 
+  useEffect(() => {
+    if (!showMorePopup) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!morePopupRef.current?.contains(event.target as Node)) {
+        setShowMorePopup(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showMorePopup]);
+
   const filteredProducts = useMemo(() => {
     return legacyProducts.filter((product) => {
       const matchesQuery = query
@@ -314,11 +365,18 @@ export default function LegacyShopPage() {
           product.description.toLowerCase().includes(query)
         : true;
       const matchesStatus = status === "all" ? true : product.status === status;
-      const matchesCategory = category === "all" ? true : product.category === category;
+      const matchesCategory =
+        category === "all"
+          ? true
+          : product.categoryTag
+          ? product.categoryTag === category
+          : false;
       const matchesAgency = agency === "all" ? true : product.agencyId === agency;
       return matchesQuery && matchesStatus && matchesCategory && matchesAgency;
     });
   }, [query, status, category, agency]);
+
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
 
   const updateParam = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -339,6 +397,13 @@ export default function LegacyShopPage() {
     const queryString = params.toString();
     router.push(queryString ? `${pathname}?${queryString}` : pathname);
   };
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
+    }, 6000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const handleSearch = (event: React.FormEvent) => {
     event.preventDefault();
@@ -488,12 +553,44 @@ export default function LegacyShopPage() {
 
       <section className="hero">
         <div className="hero-media">
-          <div className="hero-title">Shop</div>
-          <div className="hero-card">
-            <div>
-              <p className="hero-kicker">Your Trusted Thailand Merch GO</p>
-              <h1>Curated group orders, delivered with calm and care.</h1>
+          <div className="banner-slider">
+            {banners.map((banner, index) => (
+              <div
+                key={banner.id}
+                className={`banner-slide ${index === currentBannerIndex ? "active" : ""}`}
+                style={{
+                  backgroundImage: banner.image
+                    ? `url(${banner.image})`
+                    : "linear-gradient(120deg, rgba(104, 170, 198, 0.35), rgba(194, 227, 231, 0.6))"
+                }}
+              >
+                <div className="banner-content">
+                  <p className="hero-kicker">{banner.subtitle}</p>
+                  <h1>{banner.title}</h1>
+                  <p className="banner-description">{banner.description}</p>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => router.push(banner.href)}
+                  >
+                    {banner.ctaLabel}
+                  </button>
+                </div>
+              </div>
+            ))}
+            <div className="banner-controls">
+              {banners.map((_, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  className={`banner-dot ${index === currentBannerIndex ? "active" : ""}`}
+                  onClick={() => setCurrentBannerIndex(index)}
+                />
+              ))}
             </div>
+          </div>
+
+          <div className="hero-card">
             <form className="hero-search" onSubmit={handleSearch}>
               <input
                 type="text"
@@ -531,17 +628,47 @@ export default function LegacyShopPage() {
           </div>
           <div className="sidebar-card">
             <div className="sidebar-title">Category</div>
-            <ul className="sidebar-list">
-              {categoryOptions
-                .filter((item) => item.value !== "all")
-                .map((item) => (
-                <li key={item.value}>
-                  <button type="button" onClick={() => updateParam("category", item.value)}>
-                    {item.label}
-                  </button>
-                </li>
+            <div className="popular-categories">
+              {categoryOptions.map((item) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  className={`chip ${category === item.value ? "active" : ""}`}
+                  onClick={() => {
+                    if (item.value === "more") {
+                      setShowMorePopup((prev) => !prev);
+                      return;
+                    }
+                    updateParam("category", item.value);
+                  }}
+                >
+                  {item.label}
+                </button>
               ))}
-            </ul>
+            </div>
+            {showMorePopup && (
+              <div className="more-popup" ref={morePopupRef}>
+                <div className="more-popup-header">
+                  <span>Choose Category</span>
+                  <button type="button" onClick={() => setShowMorePopup(false)}>×</button>
+                </div>
+                <ul>
+                  {moreCategories.map((entry) => (
+                    <li key={entry.id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateParam("category", entry.id);
+                          setShowMorePopup(false);
+                        }}
+                      >
+                        {entry.name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </aside>
 
@@ -602,7 +729,11 @@ export default function LegacyShopPage() {
             <p>Fresh GO picks inspired by Thai trends.</p>
           </div>
           <div className="arrow-group">
-            <button className="icon-btn" aria-label="Previous">
+            <button
+              className="icon-btn"
+              aria-label="Previous"
+              onClick={() => setCurrentBannerIndex((prev) => (prev - 1 + banners.length) % banners.length)}
+            >
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path
                   d="M15 5 8 12l7 7"
@@ -614,7 +745,11 @@ export default function LegacyShopPage() {
                 />
               </svg>
             </button>
-            <button className="icon-btn" aria-label="Next">
+            <button
+              className="icon-btn"
+              aria-label="Next"
+              onClick={() => setCurrentBannerIndex((prev) => (prev + 1) % banners.length)}
+            >
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path
                   d="M9 5 16 12l-7 7"

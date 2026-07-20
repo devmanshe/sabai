@@ -5,8 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import AppToast from "@/components/AppToast";
 import { useApp } from "@/lib/store";
-import { products } from "@/lib/data";
-import type { UserProfile, UserRole } from "@/lib/types";
+import { products as fallbackProducts } from "@/lib/data";
+import type { UserProfile } from "@/lib/types";
 
 const isProfileComplete = (profile: UserProfile) => {
   return (
@@ -22,7 +22,7 @@ const isProfileComplete = (profile: UserProfile) => {
 export default function AuthPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, isReady, login, register, addToCart } = useApp();
+  const { user, isReady, login, register, addToCart, products } = useApp();
   const [tab, setTab] = useState<"login" | "register">("login");
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -30,7 +30,9 @@ export default function AuthPage() {
   const productId = searchParams.get("productId");
 
   const resolvePostLogin = (loggedUserProfileComplete: boolean) => {
-    const targetProduct = productId ? products.find((item) => item.id === productId) : null;
+    const targetProduct = productId
+      ? products.find((item) => item.id === productId) ?? fallbackProducts.find((item) => item.id === productId)
+      : null;
 
     if (intent === "cart" && targetProduct) {
       addToCart(targetProduct, 1);
@@ -58,8 +60,7 @@ export default function AuthPage() {
 
   const [loginForm, setLoginForm] = useState({
     identifier: "",
-    password: "",
-    role: "user" as UserRole
+    password: ""
   });
 
   const [registerForm, setRegisterForm] = useState({
@@ -103,40 +104,55 @@ export default function AuthPage() {
     );
   }
 
-  const handleLogin = (event: React.FormEvent) => {
+  const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
     setError("");
-    setSubmitted(true);
-    const loggedUser = login({
-      identifier: loginForm.identifier,
-      password: loginForm.password,
-      role: loginForm.role
-    });
 
-    if (loggedUser.role === "admin" || loggedUser.role === "superadmin") {
-      router.push("/admin");
-      return;
+    try {
+      setSubmitted(true);
+      const loggedUser = await login({
+        identifier: loginForm.identifier,
+        password: loginForm.password
+      });
+
+      if (loggedUser.role === "admin" || loggedUser.role === "superadmin") {
+        router.push("/admin");
+        return;
+      }
+
+      resolvePostLogin(isProfileComplete(loggedUser.profile));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Login gagal";
+      setError(message);
+      setSubmitted(false);
     }
-
-    resolvePostLogin(isProfileComplete(loggedUser.profile));
   };
 
-  const handleRegister = (event: React.FormEvent) => {
+  const handleRegister = async (event: React.FormEvent) => {
     event.preventDefault();
     if (registerForm.password !== registerForm.confirm) {
       setError("Passwords do not match.");
       return;
     }
+
     setError("");
-    setSubmitted(true);
-    register({
-      name: registerForm.name,
-      username: registerForm.username,
-      phone: registerForm.phone,
-      email: registerForm.email,
-      password: registerForm.password
-    });
-    resolvePostLogin(false);
+
+    try {
+      setSubmitted(true);
+      const registeredUser = await register({
+        name: registerForm.name,
+        username: registerForm.username,
+        phone: registerForm.phone,
+        email: registerForm.email,
+        password: registerForm.password
+      });
+
+      resolvePostLogin(isProfileComplete(registeredUser.profile));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Register gagal";
+      setError(message);
+      setSubmitted(false);
+    }
   };
 
   return (
@@ -222,21 +238,6 @@ export default function AuthPage() {
                   required
                 />
               </div>
-              <div className="auth-field">
-                <label className="auth-label">Demo Role</label>
-                <select
-                  className="auth-input"
-                  value={loginForm.role}
-                  onChange={(event) =>
-                    setLoginForm({ ...loginForm, role: event.target.value as UserRole })
-                  }
-                >
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
-                  <option value="superadmin">Super Admin</option>
-                </select>
-              </div>
-              
               <button type="submit" className="auth-primary">
                 Sign In
               </button>

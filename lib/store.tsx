@@ -6,12 +6,14 @@ import type {
   AddressBookEntry,
   CartItem,
   Category,
+  CoupleGender,
   CurrencyCode,
   Order,
-  PaymentPlan,
   PaymentMethodType,
+  PaymentPlan,
   PaymentStatus,
   Product,
+  ProductCategory,
   ProfileNotificationSettings,
   SiteSettings,
   User,
@@ -24,6 +26,13 @@ import {
   products as defaultProducts,
   sampleAdminUsers
 } from "./data";
+import { supabase } from "./supabase";
+import {
+  getUserProfile,
+  signIn as signInWithSupabase,
+  signUp as signUpWithSupabase,
+  updateUserProfile as updateUserProfileInSupabase
+} from "./auth-service";
 
 const STORAGE_KEY = "sabai-merch-state";
 
@@ -39,16 +48,16 @@ interface AppContextValue {
   profileComplete: boolean;
   cartCount: number;
   cartTotal: number;
-  login: (payload: { identifier: string; password: string; role?: UserRole }) => User;
+  login: (payload: { identifier: string; password: string }) => Promise<User>;
   register: (payload: {
     name: string;
     username: string;
     phone: string;
     email: string;
     password: string;
-  }) => User;
+  }) => Promise<User>;
   logout: () => void;
-  updateProfile: (profile: Partial<UserProfile>) => void;
+  updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
   addToCart: (product: Product, qty?: number) => boolean;
   removeFromCart: (productId: string) => void;
   updateQty: (productId: string, qty: number) => void;
@@ -62,6 +71,10 @@ interface AppContextValue {
     paymentType: PaymentPlan;
     paymentChannel: PaymentMethodType;
     shippingCost: number;
+    shipping_method?: Order["shipping_method"];
+    external_checkout_link?: string | null;
+    external_order_id?: string | null;
+    notes?: string | null;
     currency: CurrencyCode;
     exchangeRate: number;
     paymentReference: string;
@@ -132,6 +145,7 @@ const normalizeAddressBook = (addresses?: AddressBookEntry[] | null): AddressBoo
     province: address.province || "",
     city: address.city || "",
     postalCode: address.postalCode || "",
+    notes: address.notes ?? "",
     isDefault: Boolean(address.isDefault)
   }));
 
@@ -156,6 +170,79 @@ const normalizeProfile = (profile?: Partial<UserProfile> | null): UserProfile =>
 const createOrderId = () => {
   const random = Math.random().toString(36).slice(2, 10).toUpperCase();
   return `#VM-${random}`;
+};
+
+const normalizeCategory = (entry: Partial<Category> & Record<string, unknown>): Category => ({
+  id: String(entry.id ?? `category-${Date.now()}`),
+  kind: entry.kind as Category["kind"],
+  name: String(entry.name ?? "Untitled Category"),
+  parentId: entry.parentId ? String(entry.parentId) : undefined,
+  locked: Boolean(entry.locked),
+  description: entry.description ? String(entry.description) : undefined,
+  createdAt: entry.createdAt ? String(entry.createdAt) : undefined,
+  updatedAt: entry.updatedAt ? String(entry.updatedAt) : undefined,
+  slug: entry.slug ? String(entry.slug) : undefined,
+  imageUrl: entry.imageUrl ? String(entry.imageUrl) : null,
+  isActive: typeof entry.isActive === "boolean" ? entry.isActive : undefined
+});
+
+const normalizeProductImage = (entry: Record<string, unknown>) => ({
+  id: String(entry.id ?? `image-${Date.now()}`),
+  productId: String(entry.product_id ?? entry.productId ?? ""),
+  imageUrl: entry.image_url ? String(entry.image_url) : "",
+  isPrimary: Boolean(entry.is_primary ?? entry.isPrimary),
+  createdAt: entry.created_at ? String(entry.created_at) : undefined
+});
+
+const mapProductCategory = (categoryId: string | undefined, categoriesList: Category[]) => {
+  if (!categoryId) return "more" as ProductCategory;
+  const category = categoriesList.find((entry) => entry.id === categoryId);
+  if (!category) return "more" as ProductCategory;
+  if (category.kind === "agency") return "agency";
+  if (category.kind === "couple") return "couple";
+  return "more";
+};
+
+const normalizeProduct = (
+  entry: Record<string, unknown>,
+  images: Array<Record<string, unknown>>,
+  categoriesList: Category[]
+): Product => {
+  const normalizedImages = images
+    .map(normalizeProductImage)
+    .filter((image) => image.imageUrl);
+
+  const imageUrls = normalizedImages
+    .sort((a, b) => (a.isPrimary === b.isPrimary ? 0 : a.isPrimary ? -1 : 1))
+    .map((image) => image.imageUrl)
+    .filter(Boolean);
+
+  return {
+    id: String(entry.id ?? `product-${Date.now()}`),
+    name: String(entry.name ?? "Untitled Product"),
+    description: String(entry.description ?? ""),
+    price: Number(entry.price ?? 0),
+    rating: typeof entry.rating === "number" ? entry.rating : undefined,
+    reviews: typeof entry.reviews === "number" ? entry.reviews : undefined,
+    status:
+      entry.status === "preorder" || entry.status === "closed" || entry.status === "instock"
+        ? (entry.status as Product["status"]) 
+        : "instock",
+    category: mapProductCategory(
+      entry.category_id ? String(entry.category_id) : undefined,
+      categoriesList
+    ),
+    agencyId: entry.agency_id ? String(entry.agency_id) : undefined,
+    coupleGender: entry.couple_gender
+      ? (String(entry.couple_gender) as CoupleGender)
+      : undefined,
+    image: imageUrls[0] ?? undefined,
+    imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+    stock: Number(entry.stock ?? 0),
+    deadline: entry.deadline ? String(entry.deadline) : undefined,
+    createdAt: entry.created_at ? String(entry.created_at) : undefined,
+    updatedAt: entry.updated_at ? String(entry.updated_at) : undefined
+  };
 };
 
 const legacyPaymentMethodTypes = new Set<PaymentMethodType>([
@@ -247,13 +334,14 @@ const normalizeOrder = (rawOrder: Partial<Order>): Order => {
 
 const isProfileComplete = (profile?: UserProfile | null) => {
   if (!profile) return false;
+  const primaryAddress = (profile.addressBook ?? []).find((address) => address.isDefault) || (profile.addressBook ?? [])[0];
   return (
     Boolean(profile.fullName.trim()) &&
     /^\d{8,15}$/.test(profile.phone.trim()) &&
-    Boolean(profile.address.trim()) &&
-    Boolean(profile.province.trim()) &&
-    Boolean(profile.city.trim()) &&
-    /^\d{5}$/.test(profile.postalCode.trim())
+    Boolean(primaryAddress?.address?.trim()) &&
+    Boolean(primaryAddress?.province?.trim()) &&
+    Boolean(primaryAddress?.city?.trim()) &&
+    /^\d{5}$/.test((primaryAddress?.postalCode ?? "").trim())
   );
 };
 
@@ -267,6 +355,108 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [memberAccounts, setMemberAccounts] = useState<User[]>([]);
   const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
   const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadCategories = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("categories")
+          .select("*")
+          .eq("is_active", true)
+          .order("created_at", { ascending: true });
+
+        if (error) throw error;
+
+        if (!isMounted) return;
+
+        const nextCategories = (data ?? []).map((entry) =>
+          normalizeCategory({
+            ...entry,
+            id: entry.id,
+            name: entry.name,
+            description: entry.description,
+            createdAt: entry.created_at,
+            updatedAt: entry.updated_at,
+            slug: entry.slug,
+            imageUrl: entry.image_url,
+            isActive: entry.is_active,
+            kind: undefined,
+            parentId: undefined,
+            locked: false
+          })
+        );
+
+        setCategories(nextCategories.length > 0 ? nextCategories : defaultCategories);
+      } catch (error) {
+        console.error("Failed to load categories from Supabase", error);
+      }
+    };
+
+    loadCategories();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadProducts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("products")
+          .select("*,product_images(*)")
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+        if (!isMounted) return;
+
+        if (Array.isArray(data) && data.length > 0) {
+          const nextProducts = data.map((entry) => {
+            const images = Array.isArray(entry.product_images) ? entry.product_images : [];
+            return normalizeProduct(entry, images, categories);
+          });
+          setProducts(nextProducts);
+          return;
+        }
+
+        const { data: imageData, error: imageError } = await supabase.from("product_images").select("*");
+        if (imageError) throw imageError;
+
+        const imagesByProductId = new Map<string, string[]>();
+        (imageData ?? []).forEach((entry: any) => {
+          if (!entry.product_id || !entry.image_url) return;
+          const productId = String(entry.product_id);
+          const current = imagesByProductId.get(productId) ?? [];
+          current.push(String(entry.image_url));
+          imagesByProductId.set(productId, current);
+        });
+
+        const nextProducts = defaultProducts.map((product) => {
+          const matchedUrls = imagesByProductId.get(product.id) ?? [];
+          return {
+            ...product,
+            image: matchedUrls[0] ?? product.image,
+            imageUrls: matchedUrls.length > 0 ? matchedUrls : product.imageUrls
+          };
+        });
+
+        setProducts(nextProducts);
+      } catch (error) {
+        console.error("Failed to load products from Supabase", error);
+        if (isMounted) setProducts(defaultProducts);
+      }
+    };
+
+    loadProducts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [categories]);
 
   useEffect(() => {
     const raw = typeof window !== "undefined" ? window.localStorage.getItem(STORAGE_KEY) : null;
@@ -309,72 +499,56 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     );
   }, [user, cart, orders, memberAccounts, isReady]);
 
-  const login = ({ identifier, role }: { identifier: string; password: string; role?: UserRole }) => {
-    const safeRole: UserRole = role ??
-      (identifier.toLowerCase().includes("super")
-        ? "superadmin"
-        : identifier.toLowerCase().includes("admin")
-          ? "admin"
-          : "user");
+  const buildAuthenticatedUser = async (
+    authUser: { id: string; email?: string | null; user_metadata?: Record<string, unknown> },
+    fallbackRole: UserRole
+  ) => {
+    const profile = (await getUserProfile(authUser.id)) as (UserProfile & { role?: UserRole }) | null;
+    const resolvedRole = profile?.role ?? fallbackRole;
 
-    if (safeRole === "user") {
-      const normalizedIdentifier = identifier.trim().toLowerCase();
-      const existing = memberAccounts.find((account) => {
-        const username = account.username.trim().toLowerCase();
-        const email = account.email.trim().toLowerCase();
-        return username === normalizedIdentifier || email === normalizedIdentifier;
-      });
-
-      const userAccount: User = existing ?? {
-        name: identifier || "Sabai Member",
-        username: identifier,
-        email: identifier.includes("@") ? identifier : `${identifier}@sabaimerch.local`,
-        role: "user",
-        profile: normalizeProfile(emptyProfile)
-      };
-
-      if (!existing) {
-        setMemberAccounts((prev) => [userAccount, ...prev]);
-      }
-
-      setUser(userAccount);
-      return userAccount;
-    }
-
-    const adminAccount: User = {
-      name: identifier || "Sabai Member",
-      username: identifier,
-      email: identifier.includes("@") ? identifier : `${identifier}@sabaimerch.local`,
-      role: safeRole,
-      profile: normalizeProfile(emptyProfile)
-    };
-    setUser(adminAccount);
-    return adminAccount;
-  };
-
-  const register = ({ name, username, phone, email }: { name: string; username: string; phone: string; email: string; password: string }) => {
-    const newUser: User = {
-      name,
-      username,
-      email,
-      role: "user",
-      profile: normalizeProfile({
-        ...emptyProfile,
-        phone
-      })
+    const appUser: User = {
+      id: authUser.id,
+      name:
+        (authUser.user_metadata?.full_name as string | undefined) ||
+        authUser.email ||
+        "Sabai Member",
+      username:
+        (authUser.user_metadata?.username as string | undefined) ||
+        authUser.email?.split("@")[0] ||
+        "",
+      email: authUser.email || "",
+      role: resolvedRole,
+      profile: normalizeProfile(profile ?? emptyProfile)
     };
 
-    setUser(newUser);
+    setUser(appUser);
     setMemberAccounts((prev) => {
       const filtered = prev.filter(
         (account) =>
-          account.username.toLowerCase() !== username.toLowerCase() &&
-          account.email.toLowerCase() !== email.toLowerCase()
+          account.username.toLowerCase() !== appUser.username.toLowerCase() &&
+          account.email.toLowerCase() !== appUser.email.toLowerCase()
       );
-      return [newUser, ...filtered];
+      return [appUser, ...filtered];
     });
 
-    return newUser;
+    return appUser;
+  };
+
+  const login = async ({ identifier, password }: { identifier: string; password: string }) => {
+    const authUser = await signInWithSupabase({ email: identifier, password });
+    return buildAuthenticatedUser(authUser, "user");
+  };
+
+  const register = async ({ name, username, phone, email, password }: { name: string; username: string; phone: string; email: string; password: string }) => {
+    const authUser = await signUpWithSupabase({
+      email,
+      password,
+      username,
+      fullName: name,
+      phone
+    });
+
+    return buildAuthenticatedUser(authUser, "user");
   };
 
   const logout = () => {
@@ -382,8 +556,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setCart([]);
   };
 
-  const updateProfile = (profile: Partial<UserProfile>) => {
+  const updateProfile = async (profile: Partial<UserProfile>) => {
     if (!user) return;
+
     const nextUser: User = {
       ...user,
       profile: normalizeProfile({
@@ -402,6 +577,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           return sameUsername || sameEmail ? nextUser : account;
         })
       );
+    }
+
+    try {
+      await updateUserProfileInSupabase(user.id, profile);
+    } catch (error) {
+      console.error("Failed to persist profile to Supabase", error);
+      throw error;
     }
   };
 

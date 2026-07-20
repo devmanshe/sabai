@@ -26,7 +26,7 @@ export default function AdminDashboardPage() {
   const todayOrders = filteredOrders.filter((order) => order.createdAt.slice(0, 10) === today);
   const pendingOrders = filteredOrders.filter(
     (order) =>
-      order.paymentStatus === "unpaid" ||
+      order.paymentStatus === "to_pay" ||
       order.status === "to_pay"
   );
   const paidOrders = filteredOrders.filter(

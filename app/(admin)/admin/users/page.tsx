@@ -10,12 +10,18 @@ export default function UsersPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | "user" | "admin" | "superadmin">("all");
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    email: string;
+    username: string;
+    role: "user" | "admin" | "superadmin";
+    status: "active" | "inactive" | "banned";
+  }>({
     name: "",
     email: "",
     username: "",
-    role: "user" as const,
-    status: "active" as const
+    role: "user",
+    status: "active"
   });
 
   const filteredUsers = useMemo(() => {

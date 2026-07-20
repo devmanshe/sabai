@@ -9,15 +9,25 @@ export default function ProductsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    price: number;
+    stock: number;
+    category: "agency" | "couple" | "more";
+    agencyId: string;
+    coupleGender: "boys" | "girls";
+    status: "instock" | "preorder" | "closed";
+    deadline: string;
+  }>({
     name: "",
     description: "",
     price: 0,
     stock: 0,
-    category: "agency" as const,
+    category: "agency",
     agencyId: "",
-    coupleGender: "boys" as "boys" | "girls",
-    status: "instock" as const,
+    coupleGender: "boys",
+    status: "instock",
     deadline: ""
   });
 

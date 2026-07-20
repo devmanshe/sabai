@@ -7,7 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import SiteShell from "@/components/SiteShell";
 import StatusBadge from "@/components/StatusBadge";
 import CTASection from "@/components/CTASection";
-import { categoryLabels, products } from "@/lib/data";
+import { categoryLabels, products as fallbackProducts } from "@/lib/data";
 import { formatCurrency } from "@/lib/format";
 import { useApp } from "@/lib/store";
 import AppToast from "@/components/AppToast";
@@ -36,13 +36,14 @@ const getTimeLeft = (deadline?: string) => {
 export default function ProductDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const routeParams = useParams<{ id: string }>();
-  const { user, addToCart, profileComplete } = useApp();
+  const { user, addToCart, profileComplete, products } = useApp();
   const [toastOpen, setToastOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<(typeof tabItems)[number]>("Description");
   const [previewOpen, setPreviewOpen] = useState(false);
   const productId = routeParams.id ?? params.id;
-  const product = products.find((item) => item.id === productId);
+  const product = products.find((item) => item.id === productId) ??
+    fallbackProducts.find((item) => item.id === productId);
 
   if (!product) {
     return (
@@ -182,21 +183,43 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
               onClick={() => setPreviewOpen(true)}
             >
               <div className="flex h-[420px] items-center justify-center rounded-[22px] bg-white/70 shadow-inner">
+              {product.image ? (
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="h-full w-full object-cover"
+                  onError={(event) => {
+                    (event.currentTarget as HTMLImageElement).src = "/img/Logo%20w%20Text.png";
+                  }}
+                />
+              ) : (
                 <Image src="/img/Logo%20w%20Text.png" alt={product.name} width={320} height={96} />
-              </div>
-            </button>
+              )}
+            </div>
+          </button>
 
             <div className="mt-4 grid grid-cols-4 gap-3">
-              {[0, 1, 2, 3].map((index) => (
+              {(product.imageUrls ?? [product.image ?? "/img/Logo%20w%20Text.png"]).slice(0, 4).map((imageUrl, index) => (
                 <button
                   key={index}
                   type="button"
                   className={`h-20 rounded-2xl border transition ${index === 0 ? "border-ink/25 bg-white" : "border-white bg-white/70 hover:border-ink/20"}`}
                   onClick={() => setPreviewOpen(true)}
                 >
-                  <div className="flex h-full items-center justify-center rounded-2xl bg-gradient-to-br from-ice via-white to-fog text-xs font-semibold uppercase tracking-[0.2em] text-ink/50">
-                    Thumb {index + 1}
-                  </div>
+                  {imageUrl ? (
+                    <img
+                      src={imageUrl}
+                      alt={`${product.name} thumbnail ${index + 1}`}
+                      className="h-full w-full rounded-2xl object-cover"
+                      onError={(event) => {
+                        (event.currentTarget as HTMLImageElement).src = "/img/Logo%20w%20Text.png";
+                      }}
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center rounded-2xl bg-gradient-to-br from-ice via-white to-fog text-xs font-semibold uppercase tracking-[0.2em] text-ink/50">
+                      Thumb {index + 1}
+                    </div>
+                  )}
                 </button>
               ))}
             </div>

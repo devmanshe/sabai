@@ -1,5 +1,6 @@
 import type {
   AdminUser,
+  BannerItem,
   Category,
   Product,
   ProductCategory,
@@ -233,6 +234,36 @@ export const sampleAdminUsers: AdminUser[] = [
     role: "user",
     status: "active",
     createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString()
+  }
+];
+
+export const banners: BannerItem[] = [
+  {
+    id: "banner-01",
+    title: "Sabai Merch GO",
+    subtitle: "Produk GO, cuma di Sabai",
+    description: "Curated group orders delivered with calm and care.",
+    ctaLabel: "Mulai Belanja",
+    href: "/shop",
+    accent: "accent-1"
+  },
+  {
+    id: "banner-02",
+    title: "Promo Gaya Thailand",
+    subtitle: "Bawa nuansa merch Thailand ke rumahmu",
+    description: "Dapatkan item terbaru dengan sentuhan streetwear dan vibe pasar malam.",
+    ctaLabel: "Lihat Promo",
+    href: "/shop?status=preorder",
+    accent: "accent-2"
+  },
+  {
+    id: "banner-03",
+    title: "Rekomendasi Terbaru",
+    subtitle: "Pilihan favorit komunitas GO",
+    description: "Cek produk-produk yang sering jadi pilihan order bareng dan hadiah spesial.",
+    ctaLabel: "Jelajahi Sekarang",
+    href: "/shop?category=couple",
+    accent: "accent-5"
   }
 ];
 

@@ -14,12 +14,17 @@ const statusLabel: Record<OrderStatus, { label: string; className: string }> = {
   on_process: { label: "On Process", className: "bg-[#fff7d9] text-[#9b6b01]" },
   ready: { label: "Ready", className: "bg-[#e8faf2] text-[#2a7a4c]" },
   waiting_settlement: { label: "Waiting Settlement", className: "bg-[#fff5e8] text-[#b36a00]" },
+  waiting_external: { label: "Waiting External", className: "bg-[#fff5e8] text-[#b36a00]" },
   to_ship: { label: "To Ship", className: "bg-[#e8f3ff] text-[#1a69a5]" },
   to_receive: { label: "To Receive", className: "bg-[#ecf7ff] text-[#13557b]" },
   completed: { label: "Completed", className: "bg-[#e9f5ea] text-[#1f6d34]" },
   cancelled: { label: "Cancelled", className: "bg-[#faf0f0] text-[#8f2d2d]" },
   returned: { label: "Returned", className: "bg-[#f3f1fb] text-[#4f3e73]" }
 };
+
+// ensure 'waiting_external' mapping exists for OrderStatus
+// (some places expect this label)
+// nothing else to change here as OrderStatus already includes waiting_external
 
 const paymentStatusLabel: Record<PaymentStatus, string> = {
   to_pay: "To Pay",
@@ -35,7 +40,8 @@ const paymentTypeLabel: Record<Order["paymentType"], string> = {
   dp: "Down Payment"
 };
 
-const shippingMethodLabel: Record<Order["shipping_method"], string> = {
+
+const shippingMethodLabel: Record<string, string> = {
   lion_parcel: "Lion Parcel",
   shopee: "Checkout via Shopee",
   tiktok: "Checkout via TikTok Shop"
@@ -53,7 +59,7 @@ const getPaymentTypeLabel = (type: Order["paymentType"] | string | undefined) =>
 };
 
 const getShippingMethodLabel = (method: Order["shipping_method"] | string | undefined) => {
-  return shippingMethodLabel[method as Order["shipping_method"]] ?? String(method ?? "Unknown");
+  return shippingMethodLabel[String(method ?? "")] ?? String(method ?? "Unknown");
 };
 
 const formatDate = (isoDate: string) => {

@@ -25,6 +25,7 @@ const badgeLabel: Record<OrderStatus, string> = {
   on_process: "On Process",
   ready: "Ready",
   waiting_settlement: "Waiting Settlement",
+  waiting_external: "Waiting External",
   to_ship: "To Ship",
   to_receive: "To Receive",
   completed: "Completed",

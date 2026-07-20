@@ -5,6 +5,7 @@ import SiteShell from "@/components/SiteShell";
 import { RequireAuth } from "@/components/Protected";
 import AppToast from "@/components/AppToast";
 import { useApp } from "@/lib/store";
+import { changePassword } from "@/lib/auth-service";
 import type {
   AddressBookEntry,
   Gender,
@@ -103,6 +104,7 @@ const cityOptionsByProvince: Record<string, string[]> = {
   "Sumatera Utara": ["Medan", "Binjai", "Pematangsiantar", "Sibolga", "Tebing Tinggi", "Tanjungbalai", "Kabanjahe"]
 };
 
+
 const genderOptions: Array<{ label: string; value: Gender | "" }> = [
   { label: "Pilih jenis kelamin", value: "" },
   { label: "Laki-laki", value: "male" },
@@ -112,6 +114,17 @@ const genderOptions: Array<{ label: string; value: Gender | "" }> = [
 ];
 
 const sanitizeDigits = (value: string) => value.replace(/\D/g, "");
+
+const generateUuid = () => {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
 
 const formatBirthDate = (value?: string | null) => {
   if (!value) return "Belum diisi";
@@ -125,7 +138,7 @@ const formatBirthDate = (value?: string | null) => {
 };
 
 const makeEmptyAddress = (label = "Rumah"): AddressBookEntry => ({
-  id: `addr-${Date.now()}`,
+  id: generateUuid(),
   label,
   recipientName: "",
   phone: "",
@@ -133,6 +146,7 @@ const makeEmptyAddress = (label = "Rumah"): AddressBookEntry => ({
   province: "",
   city: "",
   postalCode: "",
+  notes: "",
   isDefault: false
 });
 
@@ -181,6 +195,11 @@ export default function ProfilePage() {
   const [toast, setToast] = useState<ToastState>(initialToast);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [passwordForm, setPasswordForm] = useState(emptyPasswordForm);
+  const [passwordVisibility, setPasswordVisibility] = useState({
+    current: false,
+    new: false,
+    confirm: false
+  });
   const [addressOpen, setAddressOpen] = useState(false);
   const [addressForm, setAddressForm] = useState<AddressBookEntry>(makeEmptyAddress());
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
@@ -212,6 +231,16 @@ export default function ProfilePage() {
   };
 
   const closeToast = () => setToast((prev) => ({ ...prev, open: false }));
+
+  const persistProfile = async (nextProfile: UserProfile, successTitle: string, successMessage: string) => {
+    try {
+      setForm(nextProfile);
+      await updateProfile(nextProfile);
+      openToast("success", successTitle, successMessage);
+    } catch {
+      openToast("error", "Gagal menyimpan", "Data alamat tidak bisa disimpan. Silakan coba lagi.");
+    }
+  };
 
   const handlePhotoPick = () => {
     photoInputRef.current?.click();
@@ -256,7 +285,7 @@ export default function ProfilePage() {
     }));
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
     // Basic validations
@@ -267,12 +296,6 @@ export default function ProfilePage() {
 
     if (normalizedPhone.length < 9 || normalizedPhone.length > 15) {
       openToast("error", "Nomor HP tidak valid", "Masukkan nomor HP Indonesia (9-15 digit). Contoh: 08123456789");
-      return;
-    }
-
-    const postal = sanitizeDigits(form.postalCode).slice(0, 5);
-    if (postal.length !== 5) {
-      openToast("error", "Kode pos tidak valid", "Kode pos harus 5 digit.");
       return;
     }
 
@@ -288,7 +311,6 @@ export default function ProfilePage() {
     const nextProfile: UserProfile = {
       ...form,
       phone: normalizedPhone,
-      postalCode: postal,
       addressBook: (form.addressBook ?? []).map((address) => ({
         ...address,
         phone: sanitizeDigits(address.phone),
@@ -300,9 +322,7 @@ export default function ProfilePage() {
       }
     };
 
-    updateProfile(nextProfile);
-    setForm(nextProfile);
-    openToast("success", "Profile tersimpan", "Data biodata dan alamat utama berhasil diperbarui.");
+    await persistProfile(nextProfile, "Profile tersimpan", "Data biodata dan alamat utama berhasil diperbarui.");
   };
 
   const openAddressModal = (address?: AddressBookEntry) => {
@@ -319,6 +339,7 @@ export default function ProfilePage() {
         province: form.province,
         city: form.city,
         postalCode: form.postalCode,
+        notes: "",
         isDefault: !form.addressBook?.length
       });
     }
@@ -330,7 +351,7 @@ export default function ProfilePage() {
     setEditingAddressId(null);
   };
 
-  const handleSaveAddress = () => {
+  const handleSaveAddress = async () => {
     if (!addressForm.label.trim() || !addressForm.address.trim() || !addressForm.province.trim() || !addressForm.city.trim() || !addressForm.postalCode.trim()) {
       openToast("error", "Alamat belum lengkap", "Lengkapi label, alamat, provinsi, kota, dan kode pos.");
       return;
@@ -358,6 +379,7 @@ export default function ProfilePage() {
       id: editingAddressId ?? addressForm.id ?? `addr-${Date.now()}`,
       phone: normalizedPhone,
       postalCode: postal,
+      notes: addressForm.notes ?? "",
       isDefault: Boolean(addressForm.isDefault)
     };
 
@@ -386,14 +408,12 @@ export default function ProfilePage() {
         normalizedAddress.isDefault || !form.defaultAddressId ? normalizedAddress.id : form.defaultAddressId
     };
 
-    setForm(nextProfile);
-    updateProfile(nextProfile);
+    await persistProfile(nextProfile, "Alamat tersimpan", "Daftar alamat berhasil diperbarui.");
     setAddressOpen(false);
     setEditingAddressId(null);
-    openToast("success", "Alamat tersimpan", "Daftar alamat berhasil diperbarui.");
   };
 
-  const handleDeleteAddress = (addressId: string) => {
+  const handleDeleteAddress = async (addressId: string) => {
     const nextAddresses = (form.addressBook ?? []).filter((address) => address.id !== addressId);
     const nextDefault = nextAddresses.find((address) => address.isDefault) ?? nextAddresses[0] ?? null;
 
@@ -406,12 +426,10 @@ export default function ProfilePage() {
       defaultAddressId: nextDefault?.id ?? null
     };
 
-    setForm(nextProfile);
-    updateProfile(nextProfile);
-    openToast("success", "Alamat dihapus", "Daftar alamat berhasil diperbarui.");
+    await persistProfile(nextProfile, "Alamat dihapus", "Daftar alamat berhasil diperbarui.");
   };
 
-  const handleSetDefaultAddress = (addressId: string) => {
+  const handleSetDefaultAddress = async (addressId: string) => {
     const selected = (form.addressBook ?? []).find((address) => address.id === addressId);
     if (!selected) return;
 
@@ -432,12 +450,10 @@ export default function ProfilePage() {
       addressBook: nextAddresses
     };
 
-    setForm(nextProfile);
-    updateProfile(nextProfile);
-    openToast("success", "Alamat utama dipilih", "Alamat tersebut akan dipakai saat checkout.");
+    await persistProfile(nextProfile, "Alamat utama dipilih", "Alamat tersebut akan dipakai saat checkout.");
   };
 
-  const handlePasswordSubmit = (event: React.FormEvent) => {
+  const handlePasswordSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
     if (!passwordForm.currentPassword.trim()) {
@@ -455,9 +471,15 @@ export default function ProfilePage() {
       return;
     }
 
-    setPasswordForm(emptyPasswordForm);
-    setPasswordOpen(false);
-    openToast("success", "Password diperbarui", "Password baru tersimpan pada sesi ini.");
+    try {
+      await changePassword(passwordForm.currentPassword, passwordForm.newPassword);
+      setPasswordForm(emptyPasswordForm);
+      setPasswordOpen(false);
+      openToast("success", "Password diperbarui", "Password akun berhasil diubah.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Gagal mengubah password.";
+      openToast("error", "Gagal mengubah password", message);
+    }
   };
 
   const toggleNotification = (key: keyof ProfileNotificationSettings) => {
@@ -651,75 +673,6 @@ export default function ProfilePage() {
                     />
                   </div>
 
-                  <div className="profile-field-row full">
-                    <label>Alamat Lengkap</label>
-                    <textarea
-                      className="input-field min-h-[120px] rounded-3xl"
-                      value={form.address}
-                      onChange={(event) => setForm((prev) => ({ ...prev, address: event.target.value }))}
-                      placeholder="Jl. Sudirman No.10 RT01/RW02"
-                      required
-                    />
-                  </div>
-
-                  <div className="profile-field-row">
-                    <label>Provinsi</label>
-                    <select
-                      className="input-field"
-                      value={form.province}
-                      onChange={(event) => {
-                        const province = event.target.value;
-                        const options = cityOptionsByProvince[province] ?? [];
-                        setForm((prev) => ({
-                          ...prev,
-                          province,
-                          city: options.includes(prev.city) ? prev.city : options[0] ?? ""
-                        }));
-                      }}
-                      required
-                    >
-                      <option value="">Pilih provinsi</option>
-                      {provinceOptions.map((province) => (
-                        <option key={province} value={province}>
-                          {province}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="profile-field-row">
-                    <label>Kota/Kabupaten</label>
-                    <select
-                      className="input-field"
-                      value={form.city}
-                      onChange={(event) => setForm((prev) => ({ ...prev, city: event.target.value }))}
-                      required
-                      disabled={!form.province}
-                    >
-                      <option value="">{form.province ? "Pilih kota/kabupaten" : "Pilih provinsi dulu"}</option>
-                      {cityOptions.map((city) => (
-                        <option key={city} value={city}>
-                          {city}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="profile-field-row">
-                    <label>Kode Pos</label>
-                    <input
-                      className="input-field"
-                      inputMode="numeric"
-                      maxLength={5}
-                      value={form.postalCode}
-                      onChange={(event) =>
-                        setForm((prev) => ({ ...prev, postalCode: sanitizeDigits(event.target.value).slice(0, 5) }))
-                      }
-                      placeholder="40111"
-                      required
-                    />
-                  </div>
-
                   <div className="lg:col-span-2 flex flex-wrap items-center gap-3">
                     <button type="submit" className="btn-primary">
                       Simpan Profile
@@ -773,6 +726,7 @@ export default function ProfilePage() {
                         <p className="text-sm text-text">{address.city}, {address.province}</p>
                         <p className="text-sm text-text">Kode Pos {address.postalCode}</p>
                         <p className="text-sm text-text">HP {address.phone || form.phone}</p>
+                        {address.notes ? <p className="text-sm text-text">Catatan: {address.notes}</p> : null}
                         <div className="mt-4 flex flex-wrap gap-3">
                           {!address.isDefault && (
                             <button type="button" className="btn-secondary" onClick={() => handleSetDefaultAddress(address.id)}>
@@ -879,33 +833,60 @@ export default function ProfilePage() {
               <form className="grid gap-4" onSubmit={handlePasswordSubmit}>
                 <div className="profile-field-row full">
                   <label>Password Lama</label>
-                  <input
-                    className="input-field"
-                    type="password"
-                    value={passwordForm.currentPassword}
-                    onChange={(event) => setPasswordForm((prev) => ({ ...prev, currentPassword: event.target.value }))}
-                    required
-                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      className="input-field flex-1"
+                      type={passwordVisibility.current ? "text" : "password"}
+                      value={passwordForm.currentPassword}
+                      onChange={(event) => setPasswordForm((prev) => ({ ...prev, currentPassword: event.target.value }))}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="btn-ghost whitespace-nowrap"
+                      onClick={() => setPasswordVisibility((prev) => ({ ...prev, current: !prev.current }))}
+                    >
+                      {passwordVisibility.current ? "Sembunyikan" : "Lihat"}
+                    </button>
+                  </div>
                 </div>
                 <div className="profile-field-row full">
                   <label>Password Baru</label>
-                  <input
-                    className="input-field"
-                    type="password"
-                    value={passwordForm.newPassword}
-                    onChange={(event) => setPasswordForm((prev) => ({ ...prev, newPassword: event.target.value }))}
-                    required
-                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      className="input-field flex-1"
+                      type={passwordVisibility.new ? "text" : "password"}
+                      value={passwordForm.newPassword}
+                      onChange={(event) => setPasswordForm((prev) => ({ ...prev, newPassword: event.target.value }))}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="btn-ghost whitespace-nowrap"
+                      onClick={() => setPasswordVisibility((prev) => ({ ...prev, new: !prev.new }))}
+                    >
+                      {passwordVisibility.new ? "Sembunyikan" : "Lihat"}
+                    </button>
+                  </div>
                 </div>
                 <div className="profile-field-row full">
                   <label>Konfirmasi Password Baru</label>
-                  <input
-                    className="input-field"
-                    type="password"
-                    value={passwordForm.confirmPassword}
-                    onChange={(event) => setPasswordForm((prev) => ({ ...prev, confirmPassword: event.target.value }))}
-                    required
-                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      className="input-field flex-1"
+                      type={passwordVisibility.confirm ? "text" : "password"}
+                      value={passwordForm.confirmPassword}
+                      onChange={(event) => setPasswordForm((prev) => ({ ...prev, confirmPassword: event.target.value }))}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="btn-ghost whitespace-nowrap"
+                      onClick={() => setPasswordVisibility((prev) => ({ ...prev, confirm: !prev.confirm }))}
+                    >
+                      {passwordVisibility.confirm ? "Sembunyikan" : "Lihat"}
+                    </button>
+                  </div>
                 </div>
                 <div className="flex flex-wrap justify-end gap-3">
                   <button type="button" className="btn-secondary" onClick={() => setPasswordOpen(false)}>
@@ -1022,6 +1003,15 @@ export default function ProfilePage() {
                       setAddressForm((prev) => ({ ...prev, postalCode: sanitizeDigits(event.target.value).slice(0, 5) }))
                     }
                     placeholder="40111"
+                  />
+                </div>
+                <div className="profile-field-row md:col-span-2">
+                  <label>Catatan Pengiriman</label>
+                  <textarea
+                    className="input-field min-h-[110px] rounded-3xl"
+                    value={addressForm.notes ?? ""}
+                    onChange={(event) => setAddressForm((prev) => ({ ...prev, notes: event.target.value }))}
+                    placeholder="Contoh: Antar ke pos satpam, jangan diantar ke tetangga"
                   />
                 </div>
                 <label className="md:col-span-2 flex items-center gap-3 text-sm text-text">
