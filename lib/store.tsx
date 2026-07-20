@@ -6,14 +6,13 @@ import type {
   AddressBookEntry,
   CartItem,
   Category,
-  CoupleGender,
   CurrencyCode,
   Order,
   PaymentMethodType,
   PaymentPlan,
   PaymentStatus,
   Product,
-  ProductCategory,
+  ProductImageInput,
   ProfileNotificationSettings,
   SiteSettings,
   User,
@@ -33,6 +32,13 @@ import {
   signUp as signUpWithSupabase,
   updateUserProfile as updateUserProfileInSupabase
 } from "./auth-service";
+import {
+  createProduct as createProductInSupabase,
+  deleteProduct as deleteProductInSupabase,
+  fetchProducts,
+  updateProduct as updateProductInSupabase
+} from "./product-service";
+import type { ProductImageInput } from "./types";
 
 const STORAGE_KEY = "sabai-merch-state";
 
@@ -85,9 +91,9 @@ interface AppContextValue {
     orderStatus: Order["status"];
   }) => Order | null;
   // Product management (Super Admin)
-  addProduct: (product: Omit<Product, "id" | "createdAt" | "updatedAt">) => void;
-  editProduct: (id: string, updates: Partial<Product>) => void;
-  deleteProduct: (id: string) => void;
+  addProduct: (product: Omit<Product, "id" | "createdAt" | "updatedAt">, images?: ProductImageInput[]) => Promise<void>;
+  editProduct: (id: string, updates: Partial<Product>, images?: ProductImageInput[]) => Promise<void>;
+  deleteProduct: (id: string) => Promise<void>;
   // Category management (Super Admin)
   addCategory: (category: Omit<Category, "id" | "createdAt">) => void;
   editCategory: (id: string, updates: Partial<Category>) => void;
@@ -186,64 +192,6 @@ const normalizeCategory = (entry: Partial<Category> & Record<string, unknown>): 
   isActive: typeof entry.isActive === "boolean" ? entry.isActive : undefined
 });
 
-const normalizeProductImage = (entry: Record<string, unknown>) => ({
-  id: String(entry.id ?? `image-${Date.now()}`),
-  productId: String(entry.product_id ?? entry.productId ?? ""),
-  imageUrl: entry.image_url ? String(entry.image_url) : "",
-  isPrimary: Boolean(entry.is_primary ?? entry.isPrimary),
-  createdAt: entry.created_at ? String(entry.created_at) : undefined
-});
-
-const mapProductCategory = (categoryId: string | undefined, categoriesList: Category[]) => {
-  if (!categoryId) return "more" as ProductCategory;
-  const category = categoriesList.find((entry) => entry.id === categoryId);
-  if (!category) return "more" as ProductCategory;
-  if (category.kind === "agency") return "agency";
-  if (category.kind === "couple") return "couple";
-  return "more";
-};
-
-const normalizeProduct = (
-  entry: Record<string, unknown>,
-  images: Array<Record<string, unknown>>,
-  categoriesList: Category[]
-): Product => {
-  const normalizedImages = images
-    .map(normalizeProductImage)
-    .filter((image) => image.imageUrl);
-
-  const imageUrls = normalizedImages
-    .sort((a, b) => (a.isPrimary === b.isPrimary ? 0 : a.isPrimary ? -1 : 1))
-    .map((image) => image.imageUrl)
-    .filter(Boolean);
-
-  return {
-    id: String(entry.id ?? `product-${Date.now()}`),
-    name: String(entry.name ?? "Untitled Product"),
-    description: String(entry.description ?? ""),
-    price: Number(entry.price ?? 0),
-    rating: typeof entry.rating === "number" ? entry.rating : undefined,
-    reviews: typeof entry.reviews === "number" ? entry.reviews : undefined,
-    status:
-      entry.status === "preorder" || entry.status === "closed" || entry.status === "instock"
-        ? (entry.status as Product["status"]) 
-        : "instock",
-    category: mapProductCategory(
-      entry.category_id ? String(entry.category_id) : undefined,
-      categoriesList
-    ),
-    agencyId: entry.agency_id ? String(entry.agency_id) : undefined,
-    coupleGender: entry.couple_gender
-      ? (String(entry.couple_gender) as CoupleGender)
-      : undefined,
-    image: imageUrls[0] ?? undefined,
-    imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
-    stock: Number(entry.stock ?? 0),
-    deadline: entry.deadline ? String(entry.deadline) : undefined,
-    createdAt: entry.created_at ? String(entry.created_at) : undefined,
-    updatedAt: entry.updated_at ? String(entry.updated_at) : undefined
-  };
-};
 
 const legacyPaymentMethodTypes = new Set<PaymentMethodType>([
   "bank_transfer",
@@ -406,45 +354,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     const loadProducts = async () => {
       try {
-        const { data, error } = await supabase
-          .from("products")
-          .select("*,product_images(*)")
-          .order("created_at", { ascending: false });
-
-        if (error) throw error;
+        const fetched = await fetchProducts(categories);
         if (!isMounted) return;
 
-        if (Array.isArray(data) && data.length > 0) {
-          const nextProducts = data.map((entry) => {
-            const images = Array.isArray(entry.product_images) ? entry.product_images : [];
-            return normalizeProduct(entry, images, categories);
-          });
-          setProducts(nextProducts);
-          return;
+        if (fetched.length > 0) {
+          setProducts(fetched);
+        } else {
+          setProducts(defaultProducts);
         }
-
-        const { data: imageData, error: imageError } = await supabase.from("product_images").select("*");
-        if (imageError) throw imageError;
-
-        const imagesByProductId = new Map<string, string[]>();
-        (imageData ?? []).forEach((entry: any) => {
-          if (!entry.product_id || !entry.image_url) return;
-          const productId = String(entry.product_id);
-          const current = imagesByProductId.get(productId) ?? [];
-          current.push(String(entry.image_url));
-          imagesByProductId.set(productId, current);
-        });
-
-        const nextProducts = defaultProducts.map((product) => {
-          const matchedUrls = imagesByProductId.get(product.id) ?? [];
-          return {
-            ...product,
-            image: matchedUrls[0] ?? product.image,
-            imageUrls: matchedUrls.length > 0 ? matchedUrls : product.imageUrls
-          };
-        });
-
-        setProducts(nextProducts);
       } catch (error) {
         console.error("Failed to load products from Supabase", error);
         if (isMounted) setProducts(defaultProducts);
@@ -744,26 +661,43 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Product Management (Super Admin)
-  const addProduct = (product: Omit<Product, "id" | "createdAt" | "updatedAt">) => {
-    const newProduct: Product = {
-      ...product,
-      id: `sm-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    setProducts((prev) => [newProduct, ...prev]);
+  const addProduct = async (
+    product: Omit<Product, "id" | "createdAt" | "updatedAt">,
+    images: ProductImageInput[] = []
+  ): Promise<void> => {
+    try {
+      const created = await createProductInSupabase(product, images);
+      setProducts((prev) => [created, ...prev]);
+    } catch (err) {
+      console.error("addProduct error", err);
+      throw err;
+    }
   };
 
-  const editProduct = (id: string, updates: Partial<Product>) => {
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
-      )
-    );
+  const editProduct = async (
+    id: string,
+    updates: Partial<Product>,
+    images?: ProductImageInput[]
+  ): Promise<void> => {
+    try {
+      const updated = await updateProductInSupabase(id, updates, images);
+      setProducts((prev) =>
+        prev.map((p) => (p.id === id ? updated : p))
+      );
+    } catch (err) {
+      console.error("editProduct error", err);
+      throw err;
+    }
   };
 
-  const deleteProduct = (id: string) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
+  const deleteProduct = async (id: string): Promise<void> => {
+    try {
+      await deleteProductInSupabase(id);
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      console.error("deleteProduct error", err);
+      throw err;
+    }
   };
 
   // Category Management (Super Admin)

@@ -6,8 +6,9 @@ import { RequireRole } from "@/components/Protected";
 
 export default function ProductsPage() {
   const { products, categories, addProduct, editProduct, deleteProduct } = useApp();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
   const [formData, setFormData] = useState<{
     name: string;
@@ -48,36 +49,48 @@ export default function ProductsPage() {
     );
   }, [products, searchText]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.agencyId) {
       return;
     }
 
-    if (editingId) {
-      editProduct(editingId, {
-        ...formData,
-        deadline: formData.deadline ? new Date(formData.deadline).toISOString() : undefined
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      if (editingId) {
+        await editProduct(editingId, {
+          ...formData,
+          categoryId: formData.agencyId,
+          deadline: formData.deadline ? new Date(formData.deadline).toISOString() : undefined
+        });
+        setEditingId(null);
+      } else {
+        await addProduct({
+          ...formData,
+          categoryId: formData.agencyId,
+          deadline: formData.deadline ? new Date(formData.deadline).toISOString() : undefined
+        });
+      }
+      setFormData({
+        name: "",
+        description: "",
+        price: 0,
+        stock: 0,
+        category: "agency",
+        agencyId: agencies[0]?.id || "",
+        coupleGender: "boys",
+        status: "instock",
+        deadline: ""
       });
-      setEditingId(null);
-    } else {
-      addProduct({
-        ...formData,
-        deadline: formData.deadline ? new Date(formData.deadline).toISOString() : undefined
-      });
+      setShowForm(false);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Terjadi kesalahan. Silakan coba lagi.";
+      setSubmitError(message);
+    } finally {
+      setIsSubmitting(false);
     }
-    setFormData({
-      name: "",
-      description: "",
-      price: 0,
-      stock: 0,
-      category: "agency",
-      agencyId: agencies[0]?.id || "",
-      coupleGender: "boys",
-      status: "instock",
-      deadline: ""
-    });
-    setShowForm(false);
   };
 
   const handleEdit = (product: typeof products[0]) => {
@@ -99,6 +112,7 @@ export default function ProductsPage() {
   const handleCancel = () => {
     setShowForm(false);
     setEditingId(null);
+    setSubmitError(null);
     setFormData({
       name: "",
       description: "",
@@ -265,10 +279,15 @@ export default function ProductsPage() {
                 )}
 
                 <div className="flex gap-3 pt-4">
-                  <button type="submit" className="btn-primary flex-1">
-                    {editingId ? "Update Product" : "Tambah Produk"}
+                  {submitError && (
+                    <p className="mb-2 w-full rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+                      {submitError}
+                    </p>
+                  )}
+                  <button type="submit" className="btn-primary flex-1" disabled={isSubmitting}>
+                    {isSubmitting ? "Menyimpan..." : editingId ? "Update Product" : "Tambah Produk"}
                   </button>
-                  <button type="button" onClick={handleCancel} className="btn-ghost flex-1">
+                  <button type="button" onClick={handleCancel} className="btn-ghost flex-1" disabled={isSubmitting}>
                     Batal
                   </button>
                 </div>
@@ -346,7 +365,14 @@ export default function ProductsPage() {
                           ✏️
                         </button>
                         <button
-                          onClick={() => deleteProduct(product.id)}
+                          onClick={async () => {
+                            try {
+                              await deleteProduct(product.id);
+                            } catch (err) {
+                              console.error("deleteProduct error", err);
+                              alert(err instanceof Error ? err.message : "Gagal menghapus produk.");
+                            }
+                          }}
                           className="btn-ghost text-sm"
                         >
                           🗑️
