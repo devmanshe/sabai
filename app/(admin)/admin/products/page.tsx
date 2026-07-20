@@ -9,6 +9,7 @@ export default function ProductsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
   const [formData, setFormData] = useState<{
     name: string;
@@ -280,11 +281,11 @@ export default function ProductsPage() {
 
                 <div className="flex gap-3 pt-4">
                   {submitError && (
-                    <p className="mb-2 w-full rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+                    <p role="alert" className="mb-2 w-full rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
                       {submitError}
                     </p>
                   )}
-                  <button type="submit" className="btn-primary flex-1" disabled={isSubmitting}>
+                  <button type="submit" className="btn-primary flex-1" disabled={isSubmitting} aria-busy={isSubmitting}>
                     {isSubmitting ? "Menyimpan..." : editingId ? "Update Product" : "Tambah Produk"}
                   </button>
                   <button type="button" onClick={handleCancel} className="btn-ghost flex-1" disabled={isSubmitting}>
