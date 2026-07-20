@@ -1,5 +1,7 @@
 export type ProductStatus = "preorder" | "instock" | "closed";
 export type ProductCategory = "agency" | "couple" | "more";
+export type DbProductStatus = "available" | "sold_out" | "inactive";
+export type DbProductType = "ready_stock" | "pre_order";
 export type CoupleGender = "boys" | "girls";
 export type CategoryKind = "agency" | "couple" | "gender";
 export type UserRole = "superadmin" | "admin" | "user";
@@ -36,17 +38,28 @@ export type OrderStatus =
 export interface Product {
   id: string;
   name: string;
+  slug?: string;
   description: string;
   price: number;
   rating?: number;
   reviews?: number;
   status: ProductStatus;
   category: ProductCategory;
+  categoryId?: string;
+  batchId?: string;
   agencyId?: string;
+  artistId?: string;
+  coupleId?: string;
   coupleGender?: CoupleGender;
   image?: string;
   imageUrls?: string[];
   stock: number;
+  weight?: number;
+  minDpRate?: number;
+  productType?: DbProductType;
+  isFeatured?: boolean;
+  soldCount?: number;
+  viewCount?: number;
   deadline?: string; // ISO date string for preorder deadline
   createdAt?: string;
   updatedAt?: string;
@@ -56,8 +69,17 @@ export interface ProductImage {
   id: string;
   productId: string;
   imageUrl: string;
+  altText?: string;
   isPrimary: boolean;
+  sortOrder?: number;
   createdAt?: string;
+}
+
+export interface ProductImageInput {
+  imageUrl: string;
+  altText?: string;
+  isPrimary?: boolean;
+  sortOrder?: number;
 }
 
 export interface Category {
