@@ -285,4 +285,4 @@ function AdminDashboardPageContent() {
   );
 }
 
-export default function AdminDashboardPage() { return <Suspense><AdminDashboardPageContent /></Suspense>; }
+export default function AdminDashboardPage() { return <Suspense fallback={null}><AdminDashboardPageContent /></Suspense>; }

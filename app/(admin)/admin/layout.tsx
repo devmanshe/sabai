@@ -171,7 +171,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <Suspense>
+    <Suspense fallback={null}>
       <AdminLayoutContent>{children}</AdminLayoutContent>
     </Suspense>
   );

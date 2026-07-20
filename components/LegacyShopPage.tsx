@@ -820,4 +820,4 @@ function LegacyShopPageContent() {
   );
 }
 
-export default function LegacyShopPage() { return <Suspense><LegacyShopPageContent /></Suspense>; }
+export default function LegacyShopPage() { return <Suspense fallback={null}><LegacyShopPageContent /></Suspense>; }

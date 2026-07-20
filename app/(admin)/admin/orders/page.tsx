@@ -193,4 +193,4 @@ function AdminOrdersPageContent() {
   );
 }
 
-export default function AdminOrdersPage() { return <Suspense><AdminOrdersPageContent /></Suspense>; }
+export default function AdminOrdersPage() { return <Suspense fallback={null}><AdminOrdersPageContent /></Suspense>; }

@@ -341,4 +341,4 @@ function AuthPageContent() {
   );
 }
 
-export default function AuthPage() { return <Suspense><AuthPageContent /></Suspense>; }
+export default function AuthPage() { return <Suspense fallback={null}><AuthPageContent /></Suspense>; }

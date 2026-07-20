@@ -153,4 +153,4 @@ function CouplePageContent() {
   );
 }
 
-export default function CouplePage() { return <Suspense><CouplePageContent /></Suspense>; }
+export default function CouplePage() { return <Suspense fallback={null}><CouplePageContent /></Suspense>; }

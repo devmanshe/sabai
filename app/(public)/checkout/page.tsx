@@ -504,4 +504,4 @@ function CheckoutPageContent() {
   );
 }
 
-export default function CheckoutPage() { return <Suspense><CheckoutPageContent /></Suspense>; }
+export default function CheckoutPage() { return <Suspense fallback={null}><CheckoutPageContent /></Suspense>; }
