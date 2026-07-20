@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useApp } from "@/lib/store";
 
-export default function AdminDashboardPage() {
+function AdminDashboardPageContent() {
   const { user, orders, products, users } = useApp();
   const searchParams = useSearchParams();
   const query = (searchParams.get("q") ?? "").toLowerCase();
@@ -284,3 +284,5 @@ export default function AdminDashboardPage() {
     </section>
   );
 }
+
+export default function AdminDashboardPage() { return <Suspense><AdminDashboardPageContent /></Suspense>; }

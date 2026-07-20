@@ -96,7 +96,7 @@ const renderInput = (fieldConfig: FormFieldConfig, formField: any, form: UseForm
             formField.onChange(val);
             if (fieldConfig.onValueChange) fieldConfig.onValueChange(val);
           }}
-          onCreateOption={(val) => {
+          onCreateOption={(val: string) => {
             formField.onChange(val);
             if (fieldConfig.onValueChange) fieldConfig.onValueChange(val);
           }}
@@ -110,7 +110,7 @@ const renderInput = (fieldConfig: FormFieldConfig, formField: any, form: UseForm
           international
           defaultCountry="ID"
           value={formField.value}
-          onChange={(v) => { formField.onChange(v); if (fieldConfig.onValueChange) fieldConfig.onValueChange(v); }}
+          onChange={(v: string | undefined) => { formField.onChange(v); if (fieldConfig.onValueChange) fieldConfig.onValueChange(v); }}
           className="flex w-full h-10 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm"
         />
       )

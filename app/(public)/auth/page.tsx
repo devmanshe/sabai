@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import AppToast from "@/components/AppToast";
@@ -19,7 +19,7 @@ const isProfileComplete = (profile: UserProfile) => {
   );
 };
 
-export default function AuthPage() {
+function AuthPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isReady, login, register, addToCart, products } = useApp();
@@ -340,3 +340,5 @@ export default function AuthPage() {
     </div>
   );
 }
+
+export default function AuthPage() { return <Suspense><AuthPageContent /></Suspense>; }
